@@ -15,10 +15,10 @@ import Image from "next/image";
 export default function Logo({ className = "" }: { className?: string }) {
   return (
     <Image
-      src="/Lightrider-lockup-black.svg"
+      src="/lightrider-entropy-logo-black.svg"
       alt="Light Rider"
-      width={191}
-      height={18}
+      width={243}
+      height={32}
       priority
       className={className}
     />
