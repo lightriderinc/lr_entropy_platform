@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Science_Gothic } from "next/font/google";
 import "./globals.css";
+import SessionSync from "@/components/auth/SessionSync";
 import Header from "@/components/Header";
 import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSecondary from "@/components/sidebar/SidebarSecondary";
 import SidebarSecondaryGate from "@/components/sidebar/SidebarSecondaryGate";
+import { getSession } from "@/lib/auth/session";
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-ibm-plex-sans",
@@ -28,15 +30,18 @@ export const metadata: Metadata = {
   description: "Entropy management and distribution platform.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
+  const { isAuthenticated } = await getSession();
+
   return (
     <html
       lang="en"
       className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} ${scienceGothic.variable} h-full antialiased`}
     >
       <body className="h-full flex flex-col overflow-hidden">
+        <SessionSync initialAuthenticated={isAuthenticated} />
         <Header />
         <div className="flex flex-1 min-h-0">
           <Sidebar />
