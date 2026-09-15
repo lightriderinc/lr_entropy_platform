@@ -1,18 +1,29 @@
-import { MdPerson } from "react-icons/md";
+import { handleSignIn, handleSignOut } from "@/app/actions/auth";
+import SignIn from "@/app/sign-in";
+import SignOut from "@/app/sign-out";
+import { getDisplayName, getSession } from "@/lib/auth/session";
+import AccountBadge from "./AccountBadge";
 
-/** Placeholder account/auth control. Swap the button body for a real menu or
- *  auth trigger later — it is intentionally a shared component so the header and
- *  the mobile drawer render the exact same control. */
-export default function AccountControl() {
+/** Account/auth control, shared by the header and the mobile drawer so both
+ *  render the exact same thing. Signed in: the account badge plus sign out.
+ *  Signed out: a sign-in trigger. */
+export default async function AccountControl() {
+  const { isAuthenticated, claims, userInfo } = await getSession();
+
+  if (!isAuthenticated) {
+    return <SignIn onSignIn={handleSignIn} />;
+  }
+
+  // Prefer the resolved display name: a brand-new user's claims omit `name`
+  // until their first token refresh, so falling straight to email avoids the
+  // header showing a bare placeholder on first sign-in.
+  const displayName = await getDisplayName();
+  const email = userInfo?.email ?? (claims?.email as string | undefined);
+
   return (
-    <button
-      type="button"
-      className="flex items-center gap-2 default-radius px-2 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50"
-    >
-      <span className="flex h-7 w-7 items-center justify-center default-radius bg-gray-100 text-gray-700">
-        <MdPerson />
-      </span>
-      <span className="hidden sm:inline">Account</span>
-    </button>
+    <div className="flex min-w-0 items-center gap-2">
+      <AccountBadge name={displayName ?? email ?? "Account"} />
+      <SignOut onSignOut={handleSignOut} />
+    </div>
   );
 }
