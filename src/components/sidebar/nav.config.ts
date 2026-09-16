@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { MdSpaceDashboard, MdSettings, MdHelpOutline } from "react-icons/md";
+import { MdSpaceDashboard, MdSettings, MdHelpOutline, MdBolt } from "react-icons/md";
 
 export type IconType = ComponentType<{ className?: string }>;
 
@@ -19,7 +19,7 @@ export interface NavGroup {
 export const MAIN_NAV: NavGroup[] = [
   {
     label: "General",
-    items: [{ name: "Dashboard", href: "/", icon: MdSpaceDashboard }],
+    items: [{ name: "Dashboard", href: "/", icon: MdSpaceDashboard }, { name: "Entropy", href: "/entropy", icon: MdBolt }],
   },
 ];
 
