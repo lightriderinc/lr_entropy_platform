@@ -1,14 +1,19 @@
 import { handleSignIn, handleSignOut } from "@/app/actions/auth";
 import SignIn from "@/app/sign-in";
-import SignOut from "@/app/sign-out";
 import { getDisplayName, getSession } from "@/lib/auth/session";
 import { resolveAvatarSources } from "@/lib/avatar";
 import AccountBadge from "./AccountBadge";
 
 /** Account/auth control, shared by the header and the mobile drawer so both
- *  render the exact same thing. Signed in: the account badge plus sign out.
- *  Signed out: a sign-in trigger. */
-export default async function AccountControl() {
+ *  resolve the same session/avatar data. Signed in: the account badge — a
+ *  dropdown (settings nav + sign out) on desktop, a plain link on mobile
+ *  since the drawer already surfaces settings navigation of its own. Signed
+ *  out: a sign-in trigger. */
+export default async function AccountControl({
+  dropdown = false,
+}: {
+  dropdown?: boolean;
+}) {
   const { isAuthenticated, claims, userInfo } = await getSession();
 
   if (!isAuthenticated) {
@@ -30,13 +35,12 @@ export default async function AccountControl() {
   });
 
   return (
-    <div className="flex min-w-0 items-center gap-2">
-      <AccountBadge
-        name={displayName ?? email ?? "Account"}
-        avatarUrl={src}
-        fallbackAvatarUrl={fallbackSrc}
-      />
-      <SignOut onSignOut={handleSignOut} />
-    </div>
+    <AccountBadge
+      name={displayName ?? email ?? "Account"}
+      avatarUrl={src}
+      fallbackAvatarUrl={fallbackSrc}
+      dropdown={dropdown}
+      onSignOut={dropdown ? handleSignOut : undefined}
+    />
   );
 }
