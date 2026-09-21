@@ -1,12 +1,21 @@
-import { getSession } from "@/lib/auth/session";
+"use client";
+
+import { useEffect, useState } from "react";
 import SignInRequired from "@/components/auth/SignInRequired";
 
-export default async function EntropyLayout({
+export default function EntropyLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const { isAuthenticated } = await getSession();
+  const [unauth, setUnauth] = useState(false);
 
-  if (!isAuthenticated) {
+  useEffect(() => {
+    fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((data) => { if (!data?.isAuthenticated) setUnauth(true); })
+      .catch(() => setUnauth(true));
+  }, []);
+
+  if (unauth) {
     return (
       <div className="animate-fade-in-up">
         <h1 className="text-2xl font-semibold text-gray-700 mb-2">Get Entropy</h1>
