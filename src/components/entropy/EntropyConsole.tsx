@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdWaves } from "react-icons/md";
+import { useState, useEffect } from "react";
+import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdWaves, MdScience, MdComputer } from "react-icons/md";
 import LRButton from "@/components/ui/LRButton";
 import EntropyOutput from "./EntropyOutput";
 import EntropyHistory from "./EntropyHistory";
@@ -20,30 +20,49 @@ const SOURCES = [
     name: "Cisco Outshift QRNG",
     description: "Quantum-generated random numbers from Cisco's cloud quantum service.",
     icon: <MdWaves />,
+    warning: null,
   },
   {
     id: "inmetro-beacon",
     name: "Inmetro Beacon",
     description: "Publicly verifiable random values from Brazil's national metrology institute.",
     icon: <MdCellTower />,
+    warning: null,
   },
   {
     id: "nist-beacon",
     name: "NIST Beacon",
     description: "Publicly verifiable random values from the National Institute of Standards and Technology.",
     icon: <MdHub />,
+    warning: null,
   },
   {
     id: "anu-qrng",
     name: "ANU Quantum RNG",
     description: "True quantum randomness from quantum vacuum fluctuations at the Australian National University.",
     icon: <MdBlurOn />,
+    warning: null,
   },
   {
     id: "rdseed",
     name: "RDSEED",
     description: "CSPRNG randomness seeded by the operating system entropy pool and CPU hardware sources.",
     icon: <MdMemory />,
+    warning: null,
+  },
+  {
+    id: "lightrider-qec-sim",
+    name: "Lightrider QEC (Simulator)",
+    description: "Quantum Error Correction circuits on a fully connected classical simulator. Free and instant.",
+    icon: <MdComputer />,
+    warning: "This source uses a classical simulation with all-to-all qubit connectivity. Results are not real quantum randomness and could theoretically be reproduced. Do not use for security-critical applications.",
+  },
+  {
+    id: "lightrider-qec-qpu",
+    name: "Lightrider QEC (IQM QPU)",
+    description: "Quantum Error Correction circuits executed on real IQM quantum hardware. Genuine quantum randomness.",
+    icon: <MdScience />,
+    warning: null,
   },
 ];
 
@@ -58,6 +77,14 @@ export default function EntropyConsole() {
   const [history, setHistory] = useState<EntropyResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+
+  // Load history from sessionStorage after mount to avoid hydration mismatch
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("entropy-history");
+      if (saved) setHistory(JSON.parse(saved));
+    } catch {}
+  }, []);
   const sourceData = SOURCES.find((s) => s.id === selectedSourceId);
   const bytesValid = isValidByteCount(bytes);
   const canGenerate = !!sourceData && bytesValid && !generating;
@@ -73,7 +100,11 @@ export default function EntropyConsole() {
         bytes,
       });
       setResult(next);
-      setHistory((prev) => [next, ...prev].slice(0, HISTORY_LIMIT));
+      setHistory((prev) => {
+      const updated = [next, ...prev].slice(0, HISTORY_LIMIT);
+      try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Entropy request failed.");
     } finally {
@@ -125,6 +156,14 @@ export default function EntropyConsole() {
               ))}
             </div>
           </div>
+
+          {/* Simulator warning */}
+          {sourceData?.warning && (
+            <div className="default-radius border border-amber-200 bg-amber-50 px-4 py-3">
+              <p className="text-xs font-medium text-amber-800 mb-1">⚠ Classical simulation only</p>
+              <p className="text-xs text-amber-700 leading-relaxed">{sourceData.warning}</p>
+            </div>
+          )}
 
           <div>
             <label className="mb-2.5 block text-sm font-medium text-gray-700">
@@ -192,7 +231,7 @@ export default function EntropyConsole() {
       <EntropyHistory
         items={history}
         onSelect={setResult}
-        onClear={() => setHistory([])}
+        onClear={() => { setHistory([]); try { sessionStorage.removeItem("entropy-history"); } catch {} }}
       />
     </div>
   );

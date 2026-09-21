@@ -2,22 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 
 const EMS_EGRESS = process.env.EMS_EGRESS_URL ?? "http://93.127.215.63:7081";
 
+// All sources use fastest_available since the platform is free to use.
+// The source ID is passed through for receipt labeling only.
+const POLICY_MAP: Record<string, string> = {
+  "cisco-qrng":          "fastest_available",
+  "inmetro-beacon":      "fastest_available",
+  "nist-beacon":         "fastest_available",
+  "anu-qrng":            "fastest_available",
+  "rdseed":              "fastest_available",
+  "lightrider-qec-sim":  "fastest_available",
+  "lightrider-qec-qpu":  "fastest_available",
+  default:               "fastest_available",
+};
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const bytes = parseInt(searchParams.get("bytes") ?? "32", 10);
   const sourceId = searchParams.get("source") ?? "nist-beacon";
-
-  // Map source IDs to EMS policies. Everything uses fastest_available for now
-  // since the platform is free to use — no tier restrictions.
-  const POLICY_MAP: Record<string, string> = {
-    "nist-beacon": "fastest_available",
-    "inmetro-beacon": "fastest_available",
-    "cisco-qrng": "fastest_available",
-    "anu-qrng": "fastest_available",
-    rdseed: "fastest_available",
-    default: "fastest_available",
-  };
-
   const policy = POLICY_MAP[sourceId] ?? POLICY_MAP.default;
 
   try {

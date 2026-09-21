@@ -2,9 +2,11 @@ import Link from "next/link";
 
 const SOURCES = [
   { name: "Cisco Outshift QRNG", type: "Cloud quantum random number generator", tier: "highest-quality", online: true },
-  { name: "Inmetro beacon", type: "Public randomness beacon — Brazil", tier: "fastest", online: true },
-  { name: "NIST beacon", type: "Public randomness beacon — US", tier: "fastest", online: true },
+  { name: "Inmetro Beacon", type: "Public randomness beacon — Brazil", tier: "fastest", online: true },
+  { name: "NIST Beacon", type: "Public randomness beacon — US", tier: "fastest", online: true },
   { name: "ANU QRNG", type: "Quantum optical source — photon vacuum", tier: "highest-quality", online: true },
+  { name: "Lightrider QEC (Simulator)", type: "QEC circuits on a fully connected classical simulator", tier: "highest-quality", online: true },
+  { name: "Lightrider QEC (IQM QPU)", type: "QEC circuits on real IQM quantum hardware", tier: "highest-quality", online: false },
 ];
 
 const TIER_LABEL: Record<string, string> = {
@@ -12,15 +14,9 @@ const TIER_LABEL: Record<string, string> = {
   "fastest": "Fastest",
 };
 
-const TIER_CLASS: Record<string, string> = {
-  "highest-quality": "pill-hq",
-  "fastest": "pill-fast",
-};
-
 export default function DashboardPage() {
   return (
     <div className="animate-fade-in-up max-w-2xl pb-12">
-
       <div className="pb-6 mb-8 border-b border-gray-100">
         <h1 className="text-2xl font-semibold text-gray-700 mb-2">Overview</h1>
         <p className="text-sm text-gray-500 leading-relaxed max-w-lg">
@@ -31,7 +27,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-3 gap-3 mb-8">
         {[
-          { label: "Sources active", value: "5", sub: "across 2 tiers" },
+          { label: "Sources active", value: "6", sub: "across 2 tiers" },
           { label: "Avg quality score", value: "86", sub: "out of 100" },
           { label: "Extraction method", value: "SHAKE-256", sub: "HMAC-DRBG-SHA-512", small: true },
         ].map((s) => (
@@ -51,14 +47,12 @@ export default function DashboardPage() {
               <p className="text-sm font-medium text-gray-700">{s.name}</p>
               <span
                 className={`w-2 h-2 rounded-full mt-1 shrink-0 ${s.online ? "bg-emerald-500" : "bg-gray-300"}`}
-                title={s.online ? "Online" : "Offline"}
+                title={s.online ? "Online" : "Coming soon"}
               />
             </div>
             <p className="text-xs text-gray-400 mb-3">{s.type}</p>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-              s.tier === "highest-quality"
-                ? "bg-emerald-50 text-emerald-800"
-                : "bg-amber-50 text-amber-800"
+              s.tier === "highest-quality" ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"
             }`}>
               {TIER_LABEL[s.tier]}
             </span>
@@ -85,16 +79,12 @@ export default function DashboardPage() {
       <div className="flex items-center gap-4 p-5 border border-gray-100 rounded-xl bg-white">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-700 mb-1">Ready to generate</p>
-          <p className="text-sm text-gray-400">Pick a quality tier and draw verified random bytes with a signed receipt.</p>
+          <p className="text-sm text-gray-400">Pick a source and draw verified random bytes with a signed receipt.</p>
         </div>
-        <Link
-          href="/entropy"
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-lg whitespace-nowrap transition-colors"
-        >
+        <Link href="/entropy" className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-lg whitespace-nowrap transition-colors">
           Go to entropy
         </Link>
       </div>
-
     </div>
   );
 }
