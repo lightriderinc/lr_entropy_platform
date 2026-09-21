@@ -8,6 +8,8 @@ export interface NavItem {
   href: string;
   icon?: IconType;
   external?: boolean;
+  /** Hidden for signed-out visitors (e.g. links behind an auth gate). */
+  authOnly?: boolean;
 }
 
 export interface NavGroup {
@@ -25,12 +27,12 @@ export const MAIN_NAV: NavGroup[] = [
 
 /** Pinned utility links at the bottom of the primary rail. */
 export const FOOTER_NAV: NavItem[] = [
-  { name: "Settings", href: "/settings", icon: MdSettings },
+  { name: "Settings", href: "/settings/account", icon: MdSettings, authOnly: true },
   { name: "Help", href: "/help", icon: MdHelpOutline },
 ];
 
 /**
- * Route prefixes that show a secondary rail. Empty for now. Adding a
- * sub-navigated section is two edits: a branch in SidebarNav and a prefix here.
+ * Route prefixes that show a secondary rail. Adding another sub-navigated
+ * section is two edits: a branch in SidebarNav and a prefix here.
  */
-export const SECONDARY_SIDEBAR_ROUTES: string[] = [];
+export const SECONDARY_SIDEBAR_ROUTES: string[] = ["/settings"];

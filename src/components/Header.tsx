@@ -2,8 +2,11 @@ import Link from "next/link";
 import Logo from "./Logo";
 import AccountControl from "./AccountControl";
 import MobileMenu from "./MobileMenu";
+import { getSession } from "@/lib/auth/session";
 
-export default function Header() {
+export default async function Header() {
+  const { isAuthenticated } = await getSession();
+
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-4">
       <div className="flex items-center gap-2">
@@ -14,9 +17,9 @@ export default function Header() {
 
       <div className="flex items-center gap-1 mr-2">
         <div className="hidden lg:block">
-          <AccountControl />
+          <AccountControl dropdown />
         </div>
-        <MobileMenu>
+        <MobileMenu isAuthenticated={isAuthenticated}>
           <AccountControl />
         </MobileMenu>
       </div>

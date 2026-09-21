@@ -1,11 +1,31 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import SidebarGroupSettings from "./SidebarGroupSettings";
+
 /**
- * Secondary-rail nav. No sub-navigated sections exist yet. When one is added,
- * branch here on the route prefix (§10.6) and add that prefix to
- * SECONDARY_SIDEBAR_ROUTES in nav.config.ts.
+ * Secondary-rail nav. Picks the nav group that matches the current route
+ * section. Adding another sub-navigated section is two edits: a branch here
+ * and its route prefix in SECONDARY_SIDEBAR_ROUTES (nav.config.ts).
  */
-export default function SidebarNav(props: { onNavigate?: () => void }) {
-  void props;
-  return <nav className="flex-1 overflow-auto px-3 py-4" />;
+export default function SidebarNav({
+  onNavigate,
+  isAuthenticated,
+}: {
+  onNavigate?: () => void;
+  isAuthenticated: boolean;
+}) {
+  const pathname = usePathname();
+  const isSettingsRoute = pathname?.startsWith("/settings");
+
+  return (
+    <nav className="flex-1 overflow-auto px-3 py-4">
+      {isSettingsRoute && (
+        <SidebarGroupSettings
+          onNavigate={onNavigate}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
+    </nav>
+  );
 }

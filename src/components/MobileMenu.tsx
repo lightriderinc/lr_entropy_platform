@@ -7,7 +7,13 @@ import SidebarNav from "./sidebar/SidebarNav";
 import SidebarNavMain from "./sidebar/SidebarNavMain";
 import { SECONDARY_SIDEBAR_ROUTES } from "./sidebar/nav.config";
 
-export default function MobileMenu({ children }: { children?: ReactNode }) {
+export default function MobileMenu({
+  children,
+  isAuthenticated = false,
+}: {
+  children?: ReactNode;
+  isAuthenticated?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const showSection = SECONDARY_SIDEBAR_ROUTES.some((r) =>
@@ -67,11 +73,11 @@ export default function MobileMenu({ children }: { children?: ReactNode }) {
 
           {showSection && (
             <div className="border-b border-gray-100">
-              <SidebarNav onNavigate={close} />
+              <SidebarNav onNavigate={close} isAuthenticated={isAuthenticated} />
             </div>
           )}
 
-          <SidebarNavMain onNavigate={close} />
+          <SidebarNavMain onNavigate={close} isAuthenticated={isAuthenticated} />
 
           {children && (
             <div className="border-t border-gray-100 px-3 py-4">{children}</div>

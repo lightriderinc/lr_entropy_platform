@@ -11,5 +11,8 @@ export const logtoConfig = {
   baseUrl: process.env.NEXT_BASE_URL || 'http://localhost:3002',
   cookieSecret: process.env.LOGTO_COOKIE_SECRET as string,
   cookieSecure: process.env.NODE_ENV === 'production',
-  scopes: ['email', 'profile'],
+  // 'identities' surfaces linked social accounts on /api/my-account for the
+  // "Connected accounts" section — no Management API app is registered for
+  // this tenant, so that's the only source we have for them.
+  scopes: ['email', 'profile', 'identities'],
 };
