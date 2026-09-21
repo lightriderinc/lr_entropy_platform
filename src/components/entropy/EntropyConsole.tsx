@@ -80,10 +80,13 @@ export default function EntropyConsole() {
 
   // Load history from sessionStorage after mount to avoid hydration mismatch
   useEffect(() => {
-    try {
-      const saved = sessionStorage.getItem("entropy-history");
-      if (saved) setHistory(JSON.parse(saved));
-    } catch {}
+    const timer = setTimeout(() => {
+      try {
+        const saved = sessionStorage.getItem("entropy-history");
+        if (saved) setHistory(JSON.parse(saved));
+      } catch {}
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
   const sourceData = SOURCES.find((s) => s.id === selectedSourceId);
   const bytesValid = isValidByteCount(bytes);
