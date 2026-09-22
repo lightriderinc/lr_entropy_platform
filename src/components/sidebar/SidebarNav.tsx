@@ -6,7 +6,8 @@ import SidebarGroupSettings from "./SidebarGroupSettings";
 /**
  * Secondary-rail nav. Picks the nav group that matches the current route
  * section. Adding another sub-navigated section is two edits: a branch here
- * and its route prefix in SECONDARY_SIDEBAR_ROUTES (nav.config.ts).
+ * and its route prefix in SECONDARY_SIDEBAR_ROUTES (SidebarSecondaryGate.tsx
+ * and MobileMenu.tsx).
  */
 export default function SidebarNav({
   onNavigate,

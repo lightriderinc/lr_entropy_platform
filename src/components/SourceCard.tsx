@@ -1,3 +1,5 @@
+import TiltCard from "./ui/TiltCard";
+
 const TIER_LABEL: Record<string, string> = {
   "highest-quality": "Highest quality",
   fastest: "Fastest",
@@ -15,7 +17,7 @@ export default function SourceCard({
   online: boolean;
 }) {
   return (
-    <div className="flex flex-col justify-between border border-gray-50 default-radius p-4 bg-gray-50">
+    <TiltCard className="flex flex-col justify-between border border-gray-100 default-radius p-4 bg-gray-100 cursor-pointer">
       <div className="flex flex-col gap-2 mb-2">
         <div className="flex justify-between items-start">
           <h3 className="text-base font-semibold leading-tight">{name}</h3>
@@ -44,6 +46,6 @@ export default function SourceCard({
           {TIER_LABEL[tier]}
         </span>
       </div>
-    </div>
+    </TiltCard>
   );
 }

@@ -1,6 +1,7 @@
+import { FaDice } from "react-icons/fa6";
+import { MdMenuBook, MdSpaceDashboard } from "react-icons/md";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
-import { MAIN_NAV } from "./nav.config";
 
 export default function SidebarGroupDefault({
   onNavigate,
@@ -9,13 +10,29 @@ export default function SidebarGroupDefault({
 }) {
   return (
     <>
-      {MAIN_NAV.map((group) => (
-        <SidebarNavGroup key={group.label} label={group.label}>
-          {group.items.map((item) => (
-            <SidebarNavItem key={item.href} {...item} onNavigate={onNavigate} />
-          ))}
-        </SidebarNavGroup>
-      ))}
+      <SidebarNavGroup label="Entropy">
+        <SidebarNavItem
+          name="Overview"
+          href="/"
+          icon={MdSpaceDashboard}
+          onNavigate={onNavigate}
+        />
+        <SidebarNavItem
+          name="Get entropy"
+          href="/entropy"
+          icon={FaDice}
+          onNavigate={onNavigate}
+        />
+      </SidebarNavGroup>
+
+      <SidebarNavGroup label="Explore">
+        <SidebarNavItem
+          name="Sources"
+          href="/sources"
+          icon={MdMenuBook}
+          onNavigate={onNavigate}
+        />
+      </SidebarNavGroup>
     </>
   );
 }

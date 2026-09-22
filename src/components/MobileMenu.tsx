@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { MdMenu, MdClose } from "react-icons/md";
 import SidebarNav from "./sidebar/SidebarNav";
 import SidebarNavMain from "./sidebar/SidebarNavMain";
-import { SECONDARY_SIDEBAR_ROUTES } from "./sidebar/nav.config";
+
+// Route prefixes that get a secondary sidebar. Keep in sync with the branch
+// in SidebarNav.
+const SECONDARY_SIDEBAR_ROUTES = ["/settings"];
 
 export default function MobileMenu({
   children,
