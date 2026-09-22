@@ -1,5 +1,5 @@
 import { FaDice } from "react-icons/fa6";
-import { MdMenuBook, MdSpaceDashboard } from "react-icons/md";
+import { MdMenuBook, MdRocketLaunch } from "react-icons/md";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
 
@@ -14,7 +14,7 @@ export default function SidebarGroupDefault({
         <SidebarNavItem
           name="Getting Started"
           href="/"
-          icon={MdSpaceDashboard}
+          icon={MdRocketLaunch}
           onNavigate={onNavigate}
         />
         <SidebarNavItem

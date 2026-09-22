@@ -56,7 +56,7 @@ export default function SourcesPage() {
       </div>
 
       <h2 className="text-xl font-bold text-gray-600 mb-4">Stats overview</h2>
-      <div className="grid  grid-cols-2 sm:gird-cols-2 lg:grid-cols-3  xl:grid-cols-4 gap-4 mb-8">
+      <div className="grid  grid-cols-2 sm:gird-cols-2 lg:grid-cols-3  xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-8">
         <StatCard label="Avg quality score" value="89/100" icon={<MdGrade />} />
         <StatCard
           label="Extraction method"

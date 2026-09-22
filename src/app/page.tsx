@@ -1,16 +1,5 @@
 import Link from "next/link";
 
-const STATS = [
-  { label: "Sources active", value: "6", sub: "across 2 tiers" },
-  { label: "Avg quality score", value: "89", sub: "out of 100" },
-  {
-    label: "Extraction method",
-    value: "SHAKE-256",
-    sub: "HMAC-DRBG-SHA-512",
-    small: true,
-  },
-];
-
 export default function DashboardPage() {
   return (
     <div className="animate-fade-in-up pb-12">
@@ -20,18 +9,6 @@ export default function DashboardPage() {
           Quantum-backed randomness for your applications.
         </p>
       </div>
-
-      {/* <div className="grid  grid-cols-2 sm:gird-cols-2 lg:grid-cols-3  xl:grid-cols-4 gap-4 mb-8">
-        {STATS.map((s) => (
-          <StatCard
-            key={s.label}
-            label={s.label}
-            value={s.value}
-            sub={s.sub}
-            small={s.small}
-          />
-        ))}
-      </div> */}
 
       <h2 className="text-xl font-bold text-gray-600 mb-4">How it works</h2>
 
