@@ -4,9 +4,9 @@ const SOURCES = [
   { name: "Cisco Outshift QRNG", type: "Cloud quantum random number generator", tier: "highest-quality", online: true },
   { name: "Inmetro Beacon", type: "Public randomness beacon — Brazil", tier: "fastest", online: true },
   { name: "NIST Beacon", type: "Public randomness beacon — US", tier: "fastest", online: true },
-  { name: "ANU QRNG", type: "Quantum optical source — photon vacuum", tier: "highest-quality", online: true },
-  { name: "Lightrider QEC (Simulator)", type: "QEC circuits on a fully connected classical simulator", tier: "highest-quality", online: true },
-  { name: "Lightrider QEC (IQM QPU)", type: "QEC circuits on real IQM quantum hardware", tier: "highest-quality", online: false },
+  { name: "ANU Quantum RNG", type: "Quantum optical source — photon vacuum", tier: "highest-quality", online: true },
+  { name: "RDSEED", type: "CPU hardware entropy pool", tier: "fastest", online: true },
+  { name: "IQM Resonance", type: "Cloud superconducting QPU, optional QEC error correction", tier: "highest-quality", online: true },
 ];
 
 const TIER_LABEL: Record<string, string> = {
@@ -28,7 +28,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-3 gap-3 mb-8">
         {[
           { label: "Sources active", value: "6", sub: "across 2 tiers" },
-          { label: "Avg quality score", value: "86", sub: "out of 100" },
+          { label: "Avg quality score", value: "89", sub: "out of 100" },
           { label: "Extraction method", value: "SHAKE-256", sub: "HMAC-DRBG-SHA-512", small: true },
         ].map((s) => (
           <div key={s.label} className="bg-gray-50 rounded-lg p-4">
@@ -45,10 +45,7 @@ export default function DashboardPage() {
           <div key={s.name} className="border border-gray-100 rounded-xl p-4 bg-white">
             <div className="flex justify-between items-start mb-2">
               <p className="text-sm font-medium text-gray-700">{s.name}</p>
-              <span
-                className={`w-2 h-2 rounded-full mt-1 shrink-0 ${s.online ? "bg-emerald-500" : "bg-gray-300"}`}
-                title={s.online ? "Online" : "Coming soon"}
-              />
+              <span className={`w-2 h-2 rounded-full mt-1 shrink-0 ${s.online ? "bg-emerald-500" : "bg-gray-300"}`} />
             </div>
             <p className="text-xs text-gray-400 mb-3">{s.type}</p>
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${

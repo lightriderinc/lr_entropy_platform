@@ -2,17 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 const EMS_EGRESS = process.env.EMS_EGRESS_URL ?? "http://93.127.215.63:7081";
 
-// All sources use fastest_available since the platform is free to use.
-// The source ID is passed through for receipt labeling only.
 const POLICY_MAP: Record<string, string> = {
-  "cisco-qrng":          "fastest_available",
-  "inmetro-beacon":      "fastest_available",
-  "nist-beacon":         "fastest_available",
-  "anu-qrng":            "fastest_available",
-  "rdseed":              "fastest_available",
-  "lightrider-qec-sim":  "fastest_available",
-  "lightrider-qec-qpu":  "fastest_available",
-  default:               "fastest_available",
+  "cisco-qrng":       "highest_quality",
+  "anu-qrng":         "highest_quality",
+  "iqm-resonance":    "fastest_available",
+  "iqm-qec-2":        "fastest_available",
+  "iqm-qec-3":        "fastest_available",
+  "iqm-qec-4":        "fastest_available",
+  "iqm-qec-5":        "fastest_available",
+  "inmetro-beacon":   "fastest_available",
+  "nist-beacon":      "fastest_available",
+  "rdseed":           "fastest_available",
+  default:            "fastest_available",
 };
 
 export async function GET(request: NextRequest) {
@@ -31,11 +32,7 @@ export async function GET(request: NextRequest) {
 
     const text = await res.text();
     let data: unknown;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { message: text };
-    }
+    try { data = JSON.parse(text); } catch { data = { message: text }; }
 
     console.log("[EMS egress]", res.status, text.slice(0, 120));
     return NextResponse.json(data, { status: res.ok ? 200 : res.status });

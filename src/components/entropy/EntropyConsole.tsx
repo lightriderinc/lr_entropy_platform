@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdWaves, MdScience, MdComputer } from "react-icons/md";
+import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdWaves, MdScience } from "react-icons/md";
 import LRButton from "@/components/ui/LRButton";
 import EntropyOutput from "./EntropyOutput";
 import EntropyHistory from "./EntropyHistory";
@@ -20,50 +20,44 @@ const SOURCES = [
     name: "Cisco Outshift QRNG",
     description: "Quantum-generated random numbers from Cisco's cloud quantum service.",
     icon: <MdWaves />,
-    warning: null,
   },
   {
     id: "inmetro-beacon",
     name: "Inmetro Beacon",
     description: "Publicly verifiable random values from Brazil's national metrology institute.",
     icon: <MdCellTower />,
-    warning: null,
   },
   {
     id: "nist-beacon",
     name: "NIST Beacon",
     description: "Publicly verifiable random values from the National Institute of Standards and Technology.",
     icon: <MdHub />,
-    warning: null,
   },
   {
     id: "anu-qrng",
     name: "ANU Quantum RNG",
     description: "True quantum randomness from quantum vacuum fluctuations at the Australian National University.",
     icon: <MdBlurOn />,
-    warning: null,
   },
   {
     id: "rdseed",
     name: "RDSEED",
     description: "CSPRNG randomness seeded by the operating system entropy pool and CPU hardware sources.",
     icon: <MdMemory />,
-    warning: null,
   },
   {
-    id: "lightrider-qec-sim",
-    name: "Lightrider QEC (Simulator)",
-    description: "Quantum Error Correction circuits on a fully connected classical simulator. Free and instant.",
-    icon: <MdComputer />,
-    warning: "This source uses a classical simulation with all-to-all qubit connectivity. Results are not real quantum randomness and could theoretically be reproduced. Do not use for security-critical applications.",
-  },
-  {
-    id: "lightrider-qec-qpu",
-    name: "Lightrider QEC (IQM QPU)",
-    description: "Quantum Error Correction circuits executed on real IQM quantum hardware. Genuine quantum randomness.",
+    id: "iqm-resonance",
+    name: "IQM Resonance",
+    description: "Cloud superconducting quantum processor. Optionally apply QEC error correction.",
     icon: <MdScience />,
-    warning: null,
   },
+];
+
+const QEC_MODES = [
+  { mode: 2, name: "Repetition code", desc: "Distance 3, fast" },
+  { mode: 3, name: "Surface code", desc: "Distance 3 rotated" },
+  { mode: 4, name: "Five qubit code", desc: "Highest fidelity", default: true },
+  { mode: 5, name: "Color code", desc: "Distance 3" },
 ];
 
 const HISTORY_LIMIT = 20;
@@ -76,9 +70,9 @@ export default function EntropyConsole() {
   const [result, setResult] = useState<EntropyResult | null>(null);
   const [history, setHistory] = useState<EntropyResult[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [qecEnabled, setQecEnabled] = useState(false);
+  const [qecMode, setQecMode] = useState(4);
 
-
-  // Load history from sessionStorage after mount to avoid hydration mismatch
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
@@ -88,7 +82,9 @@ export default function EntropyConsole() {
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
   const sourceData = SOURCES.find((s) => s.id === selectedSourceId);
+  const isIQM = selectedSourceId === "iqm-resonance";
   const bytesValid = isValidByteCount(bytes);
   const canGenerate = !!sourceData && bytesValid && !generating;
 
@@ -98,16 +94,18 @@ export default function EntropyConsole() {
     setError(null);
     try {
       const next = await requestEntropy({
-        sourceId: sourceData.id,
-        sourceName: sourceData.name,
+        sourceId: isIQM && qecEnabled ? `iqm-qec-${qecMode}` : sourceData.id,
+        sourceName: isIQM && qecEnabled
+          ? `IQM Resonance + QEC (${QEC_MODES.find(m => m.mode === qecMode)?.name})`
+          : sourceData.name,
         bytes,
       });
       setResult(next);
       setHistory((prev) => {
-      const updated = [next, ...prev].slice(0, HISTORY_LIMIT);
-      try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
-      return updated;
-    });
+        const updated = [next, ...prev].slice(0, HISTORY_LIMIT);
+        try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Entropy request failed.");
     } finally {
@@ -129,18 +127,16 @@ export default function EntropyConsole() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Configure */}
         <section className="flex flex-col gap-5 default-radius border border-gray-100 bg-gray-50 p-5">
+
           <div>
-            <label className="mb-2.5 block text-sm font-medium text-gray-700">
-              Entropy source
-            </label>
+            <label className="mb-2.5 block text-sm font-medium text-gray-700">Entropy source</label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {SOURCES.map((source) => (
                 <button
                   key={source.id}
                   type="button"
-                  onClick={() => setSelectedSourceId(source.id)}
+                  onClick={() => { setSelectedSourceId(source.id); if (source.id !== "iqm-resonance") setQecEnabled(false); }}
                   className={[
                     "text-left default-radius border p-3 transition-all cursor-pointer",
                     selectedSourceId === source.id
@@ -160,18 +156,63 @@ export default function EntropyConsole() {
             </div>
           </div>
 
-          {/* Simulator warning */}
-          {sourceData?.warning && (
-            <div className="default-radius border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-xs font-medium text-amber-800 mb-1">⚠ Classical simulation only</p>
-              <p className="text-xs text-amber-700 leading-relaxed">{sourceData.warning}</p>
+          {isIQM && (
+            <div className="default-radius border border-blue-200 bg-blue-50 p-4">
+              <div className="flex items-start justify-between gap-3 mb-0">
+                <div>
+                  <p className="text-sm font-medium text-blue-800">Apply QEC error correction</p>
+                  <p className="text-xs text-blue-600 mt-0.5">Optional — adds quantum error correction on top of IQM entropy</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={qecEnabled}
+                  onClick={() => setQecEnabled(!qecEnabled)}
+                  className={[
+                    "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
+                    qecEnabled ? "bg-blue-500" : "bg-gray-300",
+                  ].join(" ")}
+                >
+                  <span className={[
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200",
+                    qecEnabled ? "translate-x-4" : "translate-x-0",
+                  ].join(" ")} />
+                </button>
+              </div>
+
+              {qecEnabled && (
+                <div className="mt-3 border-t border-blue-100 pt-3">
+                  <p className="text-xs font-medium text-blue-700 mb-2">QEC mode</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {QEC_MODES.map((m) => (
+                      <button
+                        key={m.mode}
+                        type="button"
+                        onClick={() => setQecMode(m.mode)}
+                        className={[
+                          "text-left rounded-lg border p-2.5 cursor-pointer transition-all text-xs",
+                          qecMode === m.mode
+                            ? "border-blue-400 bg-white"
+                            : "border-blue-100 bg-white hover:border-blue-300",
+                        ].join(" ")}
+                      >
+                        <p className="font-medium text-blue-800 leading-tight">
+                          {m.name}
+                          {m.default && (
+                            <span className="ml-1.5 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full">Default</span>
+                          )}
+                        </p>
+                        <p className="text-blue-500 mt-0.5">{m.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           <div>
-            <label className="mb-2.5 block text-sm font-medium text-gray-700">
-              Number of entropy bytes
-            </label>
+            <label className="mb-2.5 block text-sm font-medium text-gray-700">Number of entropy bytes</label>
             <div className="flex flex-wrap gap-2 mb-3">
               {BYTE_PRESETS.map((n) => (
                 <button
@@ -205,9 +246,7 @@ export default function EntropyConsole() {
             )}
           </div>
 
-          {error && (
-            <p className="text-xs text-[var(--brand-primary)]">{error}</p>
-          )}
+          {error && <p className="text-xs text-[var(--brand-primary)]">{error}</p>}
 
           <LRButton
             type="button"
@@ -222,7 +261,6 @@ export default function EntropyConsole() {
           </LRButton>
         </section>
 
-        {/* Output */}
         <section className="flex flex-col default-radius border border-gray-100 bg-white p-5">
           <h2 className="mb-3 text-sm font-bold text-gray-600">Output</h2>
           <div className="flex-1">
