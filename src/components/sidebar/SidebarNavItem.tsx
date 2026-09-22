@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MdArrowOutward } from "react-icons/md";
-import type { IconType } from "./nav.config";
 
 export default function SidebarNavItem({
   name,
@@ -11,24 +10,20 @@ export default function SidebarNavItem({
   icon,
   onNavigate,
   external,
+  tourId,
 }: {
   name: string;
   href: string;
-  icon?: IconType;
+  icon?: React.ComponentType<{ className?: string }>;
   onNavigate?: () => void;
   external?: boolean;
+  tourId?: string;
 }) {
   const pathname = usePathname();
-  const active = external
-    ? false
-    : href === "/"
-      ? pathname === "/"
-      : pathname === href || pathname.startsWith(`${href}/`);
-
-  const Icon = icon;
-
+  const active =
+    href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
   return (
-    <li>
+    <li data-tour={tourId}>
       <Link
         href={href}
         onClick={onNavigate}
@@ -38,11 +33,18 @@ export default function SidebarNavItem({
           active ? "bg-gray-100 font-medium" : "hover:bg-gray-50"
         }`}
       >
-        {Icon && (
-          <Icon className={`text-gray-500 ${active ? "text-gray-700" : ""}`} />
-        )}
-        <span className="flex-1">{name}</span>
-        {external && <MdArrowOutward className="text-gray-400" />}
+        {icon &&
+          (() => {
+            const Icon = icon;
+            return (
+              <Icon
+                className={`text-gray-500 ${active ? "text-gray-700" : ""}`}
+              />
+            );
+          })()}
+
+        {name}
+        {external && <MdArrowOutward />}
       </Link>
     </li>
   );

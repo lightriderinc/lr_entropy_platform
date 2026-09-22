@@ -1,5 +1,10 @@
 import type { ComponentType } from "react";
-import { MdSpaceDashboard, MdSettings, MdHelpOutline, MdBolt } from "react-icons/md";
+import { FaDice } from "react-icons/fa6";
+import {
+  MdHelpCenter,
+  MdSettings,
+  MdSpaceDashboard
+} from "react-icons/md";
 
 export type IconType = ComponentType<{ className?: string }>;
 
@@ -21,14 +26,22 @@ export interface NavGroup {
 export const MAIN_NAV: NavGroup[] = [
   {
     label: "General",
-    items: [{ name: "Dashboard", href: "/", icon: MdSpaceDashboard }, { name: "Entropy", href: "/entropy", icon: MdBolt }],
+    items: [
+      { name: "Overview", href: "/", icon: MdSpaceDashboard },
+      { name: "Get entropy", href: "/entropy", icon: FaDice },
+    ],
   },
 ];
 
 /** Pinned utility links at the bottom of the primary rail. */
 export const FOOTER_NAV: NavItem[] = [
-  { name: "Settings", href: "/settings/account", icon: MdSettings, authOnly: true },
-  { name: "Help", href: "/help", icon: MdHelpOutline },
+  {
+    name: "Settings & account",
+    href: "/settings/account",
+    icon: MdSettings,
+    authOnly: true,
+  },
+  { name: "Contact", href: "https://www.lightriderinc.com/contact", icon: MdHelpCenter, external: true },
 ];
 
 /**
