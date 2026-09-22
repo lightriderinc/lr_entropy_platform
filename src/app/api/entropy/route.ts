@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 const EMS_EGRESS = process.env.EMS_EGRESS_URL ?? "http://93.127.215.63:7081";
 
 const POLICY_MAP: Record<string, string> = {
-  "cisco-qrng":       "highest_quality",
-  "anu-qrng":         "highest_quality",
+  "cisco-qrng":       "fastest_available",
+  "anu-qrng":         "fastest_available",
   "iqm-resonance":    "fastest_available",
   "iqm-qec-2":        "fastest_available",
   "iqm-qec-3":        "fastest_available",
