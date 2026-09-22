@@ -12,7 +12,7 @@ export default function SidebarGroupDefault({
     <>
       <SidebarNavGroup label="Entropy">
         <SidebarNavItem
-          name="Overview"
+          name="Getting Started"
           href="/"
           icon={MdSpaceDashboard}
           onNavigate={onNavigate}

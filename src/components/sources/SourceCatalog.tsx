@@ -82,9 +82,10 @@ export default function SourceCatalog({ sources }: { sources: Source[] }) {
               aria-label="Card view"
               aria-pressed={view === "cards"}
               onClick={() => changeView("cards")}
-              className={[viewButtonBase, view === "cards" ? viewButtonOn : viewButtonOff].join(
-                " ",
-              )}
+              className={[
+                viewButtonBase,
+                view === "cards" ? viewButtonOn : viewButtonOff,
+              ].join(" ")}
             >
               <MdGridView />
             </button>
@@ -93,16 +94,17 @@ export default function SourceCatalog({ sources }: { sources: Source[] }) {
               aria-label="List view"
               aria-pressed={view === "list"}
               onClick={() => changeView("list")}
-              className={[viewButtonBase, view === "list" ? viewButtonOn : viewButtonOff].join(
-                " ",
-              )}
+              className={[
+                viewButtonBase,
+                view === "list" ? viewButtonOn : viewButtonOff,
+              ].join(" ")}
             >
               <MdViewList />
             </button>
           </div>
         </div>
       </div>
-
+      
       {filteredSources.length === 0 ? (
         <div className="default-radius border border-dashed border-gray-200 bg-gray-50 p-16 text-center text-sm text-gray-500">
           No sources match the selected filters.

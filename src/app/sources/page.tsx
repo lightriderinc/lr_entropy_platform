@@ -1,4 +1,7 @@
 import SourceCatalog from "@/components/sources/SourceCatalog";
+import StatCard from "@/components/StatCard";
+import { MdGrade } from "react-icons/md";
+import { TbDatabaseExport } from "react-icons/tb";
 
 const SOURCES = [
   {
@@ -51,6 +54,20 @@ export default function SourcesPage() {
           Verified quantum & classical entropy sources.
         </p>
       </div>
+
+      <h2 className="text-xl font-bold text-gray-600 mb-4">Stats overview</h2>
+      <div className="grid  grid-cols-2 sm:gird-cols-2 lg:grid-cols-3  xl:grid-cols-4 gap-4 mb-8">
+        <StatCard label="Avg quality score" value="89/100" icon={<MdGrade />} />
+        <StatCard
+          label="Extraction method"
+          value="SHAKE-256"
+          sub="HMAC-DRBG-SHA-512"
+          small
+          icon={<TbDatabaseExport />}
+        />
+      </div>
+
+      <h2 className="text-xl font-bold text-gray-600 mb-4">Source catalog</h2>
       <SourceCatalog sources={SOURCES} />
     </div>
   );

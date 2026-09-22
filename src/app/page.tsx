@@ -1,47 +1,4 @@
-import InfoBox from "@/components/InfoBox";
-import SourceCard from "@/components/SourceCard";
-import StatCard from "@/components/StatCard";
 import Link from "next/link";
-
-const SOURCES = [
-  {
-    name: "ANU Quantum RNG",
-    type: "Quantum optical source (photon vacuum)",
-    tier: "highest-quality",
-    online: true,
-  },
-  {
-    name: "Cisco Outshift QRNG",
-    type: "Cloud quantum random number generator",
-    tier: "highest-quality",
-    online: true,
-  },
-  {
-    name: "IQM Resonance",
-    type: "Superconducting QPU with optional error correction",
-    tier: "highest-quality",
-    online: true,
-  },
-  {
-    name: "Inmetro Beacon",
-    type: "Public randomness beacon (Brazil)",
-    tier: "fastest",
-    online: true,
-  },
-  {
-    name: "NIST Beacon",
-    type: "Public randomness beacon (US)",
-    tier: "fastest",
-    online: true,
-  },
-
-  {
-    name: "RDSEED",
-    type: "CPU hardware entropy pool",
-    tier: "fastest",
-    online: true,
-  },
-];
 
 const STATS = [
   { label: "Sources active", value: "6", sub: "across 2 tiers" },
@@ -58,19 +15,13 @@ export default function DashboardPage() {
   return (
     <div className="animate-fade-in-up pb-12">
       <div className="mb-12">
-        <h1 className="text-2xl font-semibold text-gray-700 mb-2">Overview</h1>
+        <h1 className="text-2xl font-semibold text-gray-700 mb-2">Getting started</h1>
         <p className="text-sm text-gray-500">
           Quantum-backed randomness for your applications.
         </p>
       </div>
-      <div className="mb-8">
-        <InfoBox>
-          Every drawn byte is health-tested, cryptographically extracted, and
-          signed with a verifiable receipt.
-        </InfoBox>
-      </div>
 
-      <div className="grid  grid-cols-2 sm:gird-cols-2 lg:grid-cols-3  xl:grid-cols-4 gap-4 mb-8">
+      {/* <div className="grid  grid-cols-2 sm:gird-cols-2 lg:grid-cols-3  xl:grid-cols-4 gap-4 mb-8">
         {STATS.map((s) => (
           <StatCard
             key={s.label}
@@ -80,24 +31,10 @@ export default function DashboardPage() {
             small={s.small}
           />
         ))}
-      </div>
+      </div> */}
 
-      <h2 className="text-xl font-bold text-gray-600 mb-4">Active sources</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-        {SOURCES.map((s) => (
-          <SourceCard
-            key={s.name}
-            name={s.name}
-            type={s.type}
-            tier={s.tier}
-            online={s.online}
-          />
-        ))}
-      </div>
+      <h2 className="text-xl font-bold text-gray-600 mb-4">How it works</h2>
 
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">
-        How it works
-      </p>
       <div className="grid grid-cols-4 border border-gray-100 rounded-xl overflow-hidden mb-8">
         {[
           {
