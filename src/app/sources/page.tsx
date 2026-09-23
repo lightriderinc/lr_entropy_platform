@@ -67,6 +67,7 @@ export default function SourcesPage() {
         />
       </div>
 
+      <h2 className="text-xl font-bold text-gray-600">Source catalog</h2>
       <SourceCatalog sources={SOURCES} />
     </div>
   );
