@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import CopyButton from "@/components/ui/CopyButton";
 import type { EntropyResult } from "@/lib/entropy/generate";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
@@ -28,25 +29,6 @@ function PassBadge({ pass }: { pass: boolean }) {
 function formatIssuedAt(timestampUnixNs: number): string {
   if (!timestampUnixNs) return "—";
   return new Date(timestampUnixNs / 1_000_000).toLocaleString();
-}
-
-function CopyBtn({ value }: { value: string }) {
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(value);
-    } catch {
-      /* silent */
-    }
-  }
-  return (
-    <button
-      type="button"
-      onClick={copy}
-      className="cursor-pointer default-radius border border-gray-200 px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-50 transition-colors"
-    >
-      Copy
-    </button>
-  );
 }
 
 export default function EntropyReceiptDetails({ result }: { result: EntropyResult }) {
@@ -80,7 +62,7 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
         <div className="mt-3 border-t border-gray-100 pt-3">
           <div className="mb-1 flex items-center justify-between">
             <p className="text-xs text-gray-400">Signature ({r.signature_alg})</p>
-            <CopyBtn value={r.signature} />
+            <CopyButton value={r.signature} />
           </div>
           <p className="break-all font-mono text-xs text-gray-600">{r.signature}</p>
         </div>
@@ -89,7 +71,7 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-sm font-bold text-gray-700">Entropy output</p>
-          <CopyBtn value={result.value} />
+          <CopyButton value={result.value} />
         </div>
         <div className="default-radius overflow-x-auto border border-gray-800 bg-gray-800 p-4">
           <p className="break-all font-mono text-xs leading-relaxed text-green-300">

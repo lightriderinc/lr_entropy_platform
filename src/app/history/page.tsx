@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import ActivityHistoryList from "@/components/entropy/ActivityHistoryList";
 import type { EntropyResult } from "@/lib/entropy/generate";
+import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "entropy-history";
 
@@ -33,7 +33,7 @@ export default function ActivityHistoryPage() {
     <div className="animate-fade-in-up">
       <h1 className="text-2xl font-semibold text-gray-700 mb-2">Activity History</h1>
       <p className="mb-12 text-sm text-gray-600">
-        Entropy you&apos;ve generated in this session, with quick access to copy values or remove entries.
+        Track and manage your generated entropy.
       </p>
       <ActivityHistoryList items={items} onDelete={handleDelete} />
     </div>

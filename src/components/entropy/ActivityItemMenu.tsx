@@ -35,7 +35,7 @@ export default function ActivityItemMenu({ onDelete }: { onDelete: () => void })
         aria-expanded={open}
         aria-label="Item actions"
         onClick={() => setOpen((value) => !value)}
-        className="flex h-7 w-7 cursor-pointer items-center justify-center default-radius text-gray-500 transition-colors hover:bg-white hover:text-gray-700"
+        className="flex h-7 w-7 cursor-pointer items-center justify-center default-radius text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700"
       >
         <MdMoreVert className="text-lg" />
       </button>
