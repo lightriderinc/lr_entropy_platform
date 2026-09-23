@@ -1,6 +1,6 @@
 import { FaDice } from "react-icons/fa6";
 import { HiMiniSquare3Stack3D } from "react-icons/hi2";
-import { MdRocketLaunch } from "react-icons/md";
+import { MdHistory, MdRocketLaunch } from "react-icons/md";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
 
@@ -22,6 +22,12 @@ export default function SidebarGroupDefault({
           name="Get entropy"
           href="/entropy"
           icon={FaDice}
+          onNavigate={onNavigate}
+        />
+        <SidebarNavItem
+          name="Activity History"
+          href="/history"
+          icon={MdHistory}
           onNavigate={onNavigate}
         />
       </SidebarNavGroup>

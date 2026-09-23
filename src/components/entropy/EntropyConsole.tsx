@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdWaves, MdScience } from "react-icons/md";
 import LRButton from "@/components/ui/LRButton";
 import EntropyOutput from "./EntropyOutput";
-import EntropyHistory from "./EntropyHistory";
 import {
   BYTE_PRESETS,
   MAX_BYTES,
@@ -68,20 +67,9 @@ export default function EntropyConsole() {
   const [customBytes, setCustomBytes] = useState<string>("32");
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<EntropyResult | null>(null);
-  const [history, setHistory] = useState<EntropyResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [qecEnabled, setQecEnabled] = useState(false);
   const [qecMode, setQecMode] = useState(4);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        const saved = sessionStorage.getItem("entropy-history");
-        if (saved) setHistory(JSON.parse(saved));
-      } catch {}
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
 
   const sourceData = SOURCES.find((s) => s.id === selectedSourceId);
   const isIQM = selectedSourceId === "iqm-resonance";
@@ -101,11 +89,12 @@ export default function EntropyConsole() {
         bytes,
       });
       setResult(next);
-      setHistory((prev) => {
+      try {
+        const saved = sessionStorage.getItem("entropy-history");
+        const prev: EntropyResult[] = saved ? JSON.parse(saved) : [];
         const updated = [next, ...prev].slice(0, HISTORY_LIMIT);
-        try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
-        return updated;
-      });
+        sessionStorage.setItem("entropy-history", JSON.stringify(updated));
+      } catch {}
     } catch (err) {
       setError(err instanceof Error ? err.message : "Entropy request failed.");
     } finally {
@@ -268,12 +257,6 @@ export default function EntropyConsole() {
           </div>
         </section>
       </div>
-
-      <EntropyHistory
-        items={history}
-        onSelect={setResult}
-        onClear={() => { setHistory([]); try { sessionStorage.removeItem("entropy-history"); } catch {} }}
-      />
     </div>
   );
 }
