@@ -1,9 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdWaves, MdScience } from "react-icons/md";
 import LRButton from "@/components/ui/LRButton";
-import EntropyOutput from "./EntropyOutput";
 import {
   BYTE_PRESETS,
   MAX_BYTES,
@@ -12,6 +9,9 @@ import {
   requestEntropy,
   type EntropyResult,
 } from "@/lib/entropy/generate";
+import { useState } from "react";
+import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdScience, MdWaves } from "react-icons/md";
+import EntropyOutput from "./EntropyOutput";
 
 const SOURCES = [
   {
@@ -115,11 +115,11 @@ export default function EntropyConsole() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="flex flex-col gap-5 default-radius border border-gray-100 bg-gray-50 p-5">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="flex flex-col gap-5 default-radius border-2 border-gray-50 p-5">
 
           <div>
-            <label className="mb-2.5 block text-sm font-medium text-gray-700">Entropy source</label>
+            <label className="block text-md font-semibold text-gray-400 mb-6">Entropy source</label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {SOURCES.map((source) => (
                 <button
@@ -130,7 +130,7 @@ export default function EntropyConsole() {
                     "text-left default-radius border p-3 transition-all cursor-pointer",
                     selectedSourceId === source.id
                       ? "border-[var(--brand-primary)] bg-white"
-                      : "border-gray-200 bg-white hover:border-gray-300",
+                      : "border-gray-100 bg-white card-hover-primary",
                   ].join(" ")}
                 >
                   <div className="flex items-start gap-2">
@@ -146,11 +146,11 @@ export default function EntropyConsole() {
           </div>
 
           {isIQM && (
-            <div className="default-radius border border-blue-200 bg-blue-50 p-4">
-              <div className="flex items-start justify-between gap-3 mb-0">
+            <div className="default-radius border border-mist-100 bg-mist-100 p-4">
+              <div className="flex items-start justify-between gap-3 mb-6">
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Apply QEC error correction</p>
-                  <p className="text-xs text-blue-600 mt-0.5">Optional — adds quantum error correction on top of IQM entropy</p>
+                  <p className="text-sm font-semibold">QEC error correction</p>
+                  <p className="text-xs mt-0.5">Add quantum error correction on top of IQM entropy</p>
                 </div>
                 <button
                   type="button"
@@ -159,7 +159,7 @@ export default function EntropyConsole() {
                   onClick={() => setQecEnabled(!qecEnabled)}
                   className={[
                     "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200",
-                    qecEnabled ? "bg-blue-500" : "bg-gray-300",
+                    qecEnabled ? "bg-brand-primary" : "bg-gray-300",
                   ].join(" ")}
                 >
                   <span className={[
@@ -170,8 +170,8 @@ export default function EntropyConsole() {
               </div>
 
               {qecEnabled && (
-                <div className="mt-3 border-t border-blue-100 pt-3">
-                  <p className="text-xs font-medium text-blue-700 mb-2">QEC mode</p>
+                <div className="mt-3 ">
+                  <p className="text-xs font-semibold text-mist-600 mb-3">QEC mode</p>
                   <div className="grid grid-cols-2 gap-2">
                     {QEC_MODES.map((m) => (
                       <button
@@ -179,10 +179,10 @@ export default function EntropyConsole() {
                         type="button"
                         onClick={() => setQecMode(m.mode)}
                         className={[
-                          "text-left rounded-lg border p-2.5 cursor-pointer transition-all text-xs",
+                          "text-left default-radius border p-2.5 cursor-pointer transition-all text-xs",
                           qecMode === m.mode
-                            ? "border-blue-400 bg-white"
-                            : "border-blue-100 bg-white hover:border-blue-300",
+                            ? "border-brand-primary bg-mist-200"
+                            : "border-mist-200 bg-mist-200 hover:border-blue-300",
                         ].join(" ")}
                       >
                         <p className="font-medium text-blue-800 leading-tight">
@@ -250,8 +250,8 @@ export default function EntropyConsole() {
           </LRButton>
         </section>
 
-        <section className="flex flex-col default-radius border border-gray-100 bg-white p-5">
-          <h2 className="mb-3 text-sm font-bold text-gray-600">Output</h2>
+        <section className="flex flex-col default-radius border-2 border-gray-50 bg-gray-50 p-5">
+          <h2 className="block text-md font-semibold text-gray-400 mb-6">Output</h2>
           <div className="flex-1">
             <EntropyOutput result={result} />
           </div>
