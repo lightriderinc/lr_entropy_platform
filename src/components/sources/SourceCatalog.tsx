@@ -66,9 +66,14 @@ export default function SourceCatalog({ sources }: { sources: Source[] }) {
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
-        <p className="text-md text-gray-950">
-          {filteredSources.length} Sources, {onlineCount} Online
-        </p>
+        <div className="flex flex-col">
+          <h2 className="text-xl font-bold text-gray-600 mb-2">
+            Source catalog
+          </h2>
+          <span className="text-md text-gray-950">
+            {filteredSources.length} Sources, {onlineCount} Online
+          </span>
+        </div>
 
         <div className="flex items-center gap-3">
           <SourceFilterBar
@@ -104,7 +109,7 @@ export default function SourceCatalog({ sources }: { sources: Source[] }) {
           </div>
         </div>
       </div>
-      
+
       {filteredSources.length === 0 ? (
         <div className="default-radius border border-dashed border-gray-200 bg-gray-50 p-16 text-center text-sm text-gray-500">
           No sources match the selected filters.
