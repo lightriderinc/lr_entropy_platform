@@ -1,18 +1,25 @@
 import HowItWorksCard from "@/components/HowItWorksCard";
-import Link from "next/link";
+import NavCard from "@/components/NavCard";
+import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi";
+import { HiMiniSquare3Stack3D } from "react-icons/hi2";
+import { MdInfo } from "react-icons/md";
 
 export default function DashboardPage() {
   return (
     <div className="animate-fade-in-up pb-12">
       <div className="mb-12">
-        <h1 className="text-2xl font-semibold text-gray-700 mb-2">Getting started</h1>
+        <h1 className="text-2xl font-semibold text-gray-700 mb-2">
+          Getting started
+        </h1>
         <p className="text-sm text-gray-500">
-          Quantum-backed randomness for your applications.
+          Get started with quantum-backed randomness for your applications.
         </p>
       </div>
 
-      <h2 className="text-xl font-bold text-gray-600 mb-4">How it works</h2>
-
+      <h2 className="text-xl font-bold text-gray-600 mb-4 inline-flex items-center gap-2">
+        <MdInfo className="text-gray-200" />
+        How it works
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 mb-8">
         <HowItWorksCard
           n="01"
@@ -33,25 +40,23 @@ export default function DashboardPage() {
           n="04"
           title="Deliver"
           desc="You receive bytes and a signed receipt proving exactly what backed your draw."
-          last
         />
       </div>
 
-      <div className="flex items-center gap-4 p-5 border border-gray-100 rounded-xl bg-white">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-700 mb-1">
-            Ready to generate
-          </p>
-          <p className="text-sm text-gray-400">
-            Pick a source and draw verified random bytes with a signed receipt.
-          </p>
-        </div>
-        <Link
+      <h2 className="text-xl font-bold text-gray-600 mb-4">Quick access</h2>
+      <div className="flex flex-row gap-4">
+        <NavCard
+          icon={HiMiniSquare3Stack3D}
+          title="Explore sources"
+          href="/sources"
+          desc="View available entropy sources from the catalog."
+        />
+        <NavCard
+          icon={GiPerspectiveDiceSixFacesRandom}
+          title="Ready to generate?"
           href="/entropy"
-          className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-lg whitespace-nowrap transition-colors"
-        >
-          Go to entropy
-        </Link>
+          desc="Pick a source and draw verified random bytes with a signed receipt."
+        />
       </div>
     </div>
   );
