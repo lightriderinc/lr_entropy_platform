@@ -8,7 +8,7 @@ export default function DashboardPage() {
   return (
     <div className="animate-fade-in-up pb-12">
       <div className="mb-12">
-        <h1 className="text-2xl font-semibold text-gray-700 mb-2">
+        <h1 className="text-2xl font-semibold text-gray-700">
           Getting started
         </h1>
         <p className="text-sm text-gray-500">

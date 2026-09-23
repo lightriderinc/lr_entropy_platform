@@ -19,13 +19,13 @@ export default function SidebarGroupDefault({
           onNavigate={onNavigate}
         />
         <SidebarNavItem
-          name="Get entropy"
+          name="Get Entropy"
           href="/entropy"
           icon={FaDice}
           onNavigate={onNavigate}
         />
         <SidebarNavItem
-          name="Activity History"
+          name="Session History"
           href="/history"
           icon={MdHistory}
           onNavigate={onNavigate}
