@@ -1,8 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import CopyButton from "@/components/ui/CopyButton";
 import type { EntropyResult } from "@/lib/entropy/generate";
+import type { ReactNode } from "react";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -17,8 +17,8 @@ function PassBadge({ pass }: { pass: boolean }) {
   return (
     <span
       className={[
-        "inline-block default-radius px-1.5 py-0.5 text-xs font-medium",
-        pass ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700",
+        "inline-block rounded px-1.5 py-0.5 text-xs font-medium",
+        pass ? "bg-green-50 text-green-700 border border-green-500" : "bg-red-50 text-red-700 border border-red-500",
       ].join(" ")}
     >
       {pass ? "Pass" : "Fail"}
@@ -48,9 +48,9 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
           <Field
             label="Health gates"
             value={
-              <span className="flex gap-2">
-                <span>RCT <PassBadge pass={r.rct_pass} /></span>
-                <span>APT <PassBadge pass={r.apt_pass} /></span>
+              <span className="flex gap-3 mt-1">
+                <span className="flex gap-1.5">RCT  <PassBadge pass={r.rct_pass} /></span>
+                <span className="flex gap-1.5">APT <PassBadge pass={r.apt_pass} /></span>
               </span>
             }
           />
