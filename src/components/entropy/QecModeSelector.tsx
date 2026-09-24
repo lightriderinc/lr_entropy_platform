@@ -1,9 +1,9 @@
 "use client";
 
 export const QEC_MODES = [
-  { mode: 2, name: "Repetition code", desc: "Distance 3, fast" },
-  { mode: 3, name: "Surface code", desc: "Distance 3 rotated" },
   { mode: 4, name: "Five qubit code", desc: "Highest fidelity", default: true },
+  { mode: 2, name: "Repetition code", desc: "Distance 3, fast" },
+  { mode: 3, name: "Surface code", desc: "Distance 3, rotated" },
   { mode: 5, name: "Color code", desc: "Distance 3" },
 ];
 
@@ -16,7 +16,7 @@ export default function QecModeSelector({
 }) {
   return (
     <div className="mt-3">
-      <p className="text-xs font-semibold text-mist-600 mb-3">QEC mode</p>
+      <p className="text-sm font-medium text-gray-400 mb-3">Mode selection</p>
       <div className="grid grid-cols-2 gap-2">
         {QEC_MODES.map((m) => (
           <button
@@ -26,17 +26,19 @@ export default function QecModeSelector({
             className={[
               "text-left default-radius border p-2.5 cursor-pointer transition-all text-xs",
               selectedMode === m.mode
-                ? "border-brand-primary bg-mist-200"
-                : "border-mist-200 bg-mist-200 hover:border-blue-300",
+                ? "border-brand-primary bg-red-50"
+                : "border-gray-100 bg-white card-hover-primary",
             ].join(" ")}
           >
-            <p className="font-medium text-blue-800 leading-tight">
+            <p className="text-sm font-medium text-gray-800">
               {m.name}
               {m.default && (
-                <span className="ml-1.5 text-[10px] bg-blue-500 text-white px-1.5 py-0.5 rounded-full">Default</span>
+                <span className="ml-1.5 text-[10px] bg-[var(--brand-tertiary)] text-white px-1.5 py-0.5 rounded">
+                  Default
+                </span>
               )}
             </p>
-            <p className="text-blue-500 mt-0.5">{m.desc}</p>
+            <p className="text-gray-500 mt-0.5">{m.desc}</p>
           </button>
         ))}
       </div>

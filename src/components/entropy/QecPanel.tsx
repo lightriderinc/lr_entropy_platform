@@ -14,11 +14,11 @@ export default function QecPanel({
   onModeChange: (mode: number) => void;
 }) {
   return (
-    <div className="default-radius border border-mist-100 bg-mist-100 p-4">
+    <div className="default-radius border border-gray-50 bg-gray-50 p-4">
       <div className="flex items-start justify-between gap-3 mb-6">
         <div>
-          <p className="text-sm font-semibold">QEC error correction</p>
-          <p className="text-xs mt-0.5">Add quantum error correction on top of IQM entropy</p>
+          <p className="text-md font-semibold">QEC error correction</p>
+          <p className="text-xs mt-1">Add quantum error correction on top of IQM entropy</p>
         </div>
         <button
           type="button"
