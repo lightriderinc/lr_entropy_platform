@@ -1,7 +1,7 @@
 "use client";
 
 import LRButton from "@/components/ui/LRButton";
-import { isValidByteCount } from "@/lib/entropy/generate";
+import { isValidByteCount, MAX_BYTES, MIN_BYTES } from "@/lib/entropy/generate";
 import { useState } from "react";
 import { MdArrowForward } from "react-icons/md";
 import EntropyByteCountInput from "./EntropyByteCountInput";
@@ -54,9 +54,19 @@ export default function EntropyInput({
   }
 
   function handleCustom(val: string) {
-    setCustomBytes(val);
+    if (val === "") {
+      setCustomBytes(val);
+      setBytes(0);
+      return;
+    }
     const n = parseInt(val, 10);
-    setBytes(!isNaN(n) ? n : 0);
+    if (isNaN(n)) {
+      setCustomBytes(val);
+      return;
+    }
+    const clamped = Math.min(MAX_BYTES, Math.max(MIN_BYTES, n));
+    setCustomBytes(String(clamped));
+    setBytes(clamped);
   }
 
   function handleGenerateClick() {
