@@ -13,6 +13,9 @@ const POLICY_MAP: Record<string, string> = {
   "inmetro-beacon":   "fastest_available",
   "nist-beacon":      "fastest_available",
   "rdseed":           "fastest_available",
+  // Rigetti feeds pool_quantum_verified (ems-egress/src/policy.rs), so it is
+  // the one source here that does NOT route to the fastest tier.
+  "rigetti-cepheus":  "quantum_verified",
   default:            "fastest_available",
 };
 

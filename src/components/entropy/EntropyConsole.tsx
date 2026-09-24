@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MdArrowForward, MdBlurOn, MdCellTower, MdHub, MdMemory, MdWaves, MdScience } from "react-icons/md";
+import { MdArrowForward, MdBlurOn, MdCellTower, MdDeveloperBoard, MdHub, MdMemory, MdWaves, MdScience } from "react-icons/md";
 import LRButton from "@/components/ui/LRButton";
 import EntropyOutput from "./EntropyOutput";
 import {
@@ -49,6 +49,13 @@ const SOURCES = [
     name: "IQM Resonance",
     description: "Cloud superconducting quantum processor. Optionally apply QEC error correction.",
     icon: <MdScience />,
+  },
+  {
+    id: "rigetti-cepheus",
+    name: "Rigetti Cepheus-1-108Q",
+    description:
+      "Superconducting QPU measured on Light Rider's own Q-ENTROPY runs, pooled per chiplet and drawn as one stream.",
+    icon: <MdDeveloperBoard />,
   },
 ];
 
