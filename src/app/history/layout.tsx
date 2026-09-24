@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import SignInRequired from "@/components/auth/SignInRequired";
+import { useEffect, useState } from "react";
 
 export default function HistoryLayout({
   children,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SignInRequired from "@/components/auth/SignInRequired";
+import { handleSignIn } from "../actions/auth";
 
 export default function EntropyLayout({
   children,
@@ -11,18 +11,31 @@ export default function EntropyLayout({
   useEffect(() => {
     fetch("/api/auth/session")
       .then((r) => r.json())
-      .then((data) => { if (!data?.isAuthenticated) setUnauth(true); })
+      .then((data) => {
+        if (!data?.isAuthenticated) setUnauth(true);
+      })
       .catch(() => setUnauth(true));
   }, []);
 
   if (unauth) {
     return (
       <div className="animate-fade-in-up">
-        <h1 className="text-2xl font-semibold text-gray-700 mb-2">Get Entropy</h1>
+        <h1 className="text-2xl font-semibold text-gray-700 mb-2">
+          Get Entropy
+        </h1>
         <p className="mb-6 text-sm text-gray-600">
           Generate certified entropy from quantum and hardware sources.
         </p>
-        <SignInRequired target="entropy generation" />
+        <p className="mt-3 text-sm text-gray-600">
+          <button
+            type="button"
+            onClick={() => handleSignIn()}
+            className="brand-link cursor-pointer"
+          >
+            Log in
+          </button>{" "}
+          to request entropy.
+        </p>
       </div>
     );
   }
