@@ -2,7 +2,7 @@
 
 import CopyButton from "@/components/ui/CopyButton";
 import type { EntropyResult } from "@/lib/entropy/generate";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -73,12 +73,51 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
           <p className="text-sm font-bold text-gray-700">Entropy output</p>
           <CopyButton value={result.value} />
         </div>
-        <div className="default-radius overflow-x-auto border border-gray-800 bg-gray-800 p-4">
-          <p className="break-all font-mono text-xs leading-relaxed text-green-300">
-            {result.value}
-          </p>
-        </div>
+        {/* key resets the expanded state when a new value is generated */}
+        <EntropyOutput key={result.value} value={result.value} />
       </div>
+    </div>
+  );
+}
+
+function EntropyOutput({ value }: { value: string }) {
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+
+  // Re-measure on resize so the toggle only appears when the text exceeds two lines.
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el || expanded) return;
+    // ResizeObserver fires once on observe, so this also covers the initial measurement.
+    const observer = new ResizeObserver(() =>
+      setOverflows(el.scrollHeight > el.clientHeight + 1),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [value, expanded]);
+
+  return (
+    <div className="default-radius border border-gray-800 bg-gray-800 p-4">
+      <p
+        ref={textRef}
+        className={[
+          "break-all font-mono text-xs leading-relaxed text-green-300",
+          expanded ? "" : "line-clamp-2",
+        ].join(" ")}
+      >
+        {value}
+      </p>
+      {(overflows || expanded) && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+          className="mt-2 text-xs font-medium text-gray-300 hover:text-white"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
     </div>
   );
 }
