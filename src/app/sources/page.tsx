@@ -34,6 +34,12 @@ const SOURCES = [
     policy: "fastest",
     online: true,
   },
+  {
+    name: "Rigetti Cepheus-1-108Q",
+    type: "Superconducting QPU chiplet entropy pools",
+    policy: "highest-quality",
+    online: true,
+  },
 
   {
     name: "RDSEED",
