@@ -23,6 +23,12 @@ const SOURCES = [
     online: true,
   },
   {
+    name: "Rigetti Cepheus-1-108Q",
+    type: "Superconducting QPU chiplet entropy pools",
+    policy: "highest-quality",
+    online: true,
+  },
+  {
     name: "Inmetro Beacon",
     type: "Public randomness beacon (Brazil)",
     policy: "fastest",
@@ -34,13 +40,6 @@ const SOURCES = [
     policy: "fastest",
     online: true,
   },
-  {
-    name: "Rigetti Cepheus-1-108Q",
-    type: "Superconducting QPU chiplet entropy pools",
-    policy: "highest-quality",
-    online: true,
-  },
-
   {
     name: "RDSEED",
     type: "CPU hardware entropy pool",
