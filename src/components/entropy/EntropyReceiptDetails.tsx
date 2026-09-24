@@ -113,7 +113,7 @@ function EntropyOutput({ value }: { value: string }) {
           type="button"
           onClick={() => setExpanded((e) => !e)}
           aria-expanded={expanded}
-          className="mt-2 text-xs font-medium text-gray-300 hover:text-white"
+          className="mt-2 text-xs font-medium text-gray-300 hover:text-white cursor-pointer"
         >
           {expanded ? "Show less" : "Show more"}
         </button>
