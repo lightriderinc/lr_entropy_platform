@@ -27,6 +27,7 @@ export default function EntropyInput({
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [bytes, setBytes] = useState<number>(32);
   const [customBytes, setCustomBytes] = useState<string>("32");
+  const [isCustom, setIsCustom] = useState(false);
   const [qecEnabled, setQecEnabled] = useState(false);
   const [qecMode, setQecMode] = useState(4);
 
@@ -41,14 +42,21 @@ export default function EntropyInput({
   }
 
   function handlePreset(n: number) {
+    setIsCustom(false);
     setBytes(n);
     setCustomBytes(String(n));
+  }
+
+  function handleCustomSelect() {
+    setIsCustom(true);
+    const n = parseInt(customBytes, 10);
+    setBytes(!isNaN(n) ? n : 0);
   }
 
   function handleCustom(val: string) {
     setCustomBytes(val);
     const n = parseInt(val, 10);
-    if (!isNaN(n)) setBytes(n);
+    setBytes(!isNaN(n) ? n : 0);
   }
 
   function handleGenerateClick() {
@@ -74,7 +82,9 @@ export default function EntropyInput({
         bytes={bytes}
         customBytes={customBytes}
         bytesValid={bytesValid}
+        isCustom={isCustom}
         onPresetSelect={handlePreset}
+        onCustomSelect={handleCustomSelect}
         onCustomChange={handleCustom}
       />
 
