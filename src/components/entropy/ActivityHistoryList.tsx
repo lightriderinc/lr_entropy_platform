@@ -45,7 +45,7 @@ export default function ActivityHistoryList({
           >
             <div>
               <p className="truncate font-mono text-xs text-gray-400">
-                {item.value}
+                {item.id}
               </p>
 
               <div className="flex flex-wrap items-center gap-2">
