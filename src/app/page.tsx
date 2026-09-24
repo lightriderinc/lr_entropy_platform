@@ -1,7 +1,5 @@
 import HowItWorksCard from "@/components/HowItWorksCard";
-import NavCard from "@/components/NavCard";
-import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi";
-import { HiMiniSquare3Stack3D } from "react-icons/hi2";
+import QuickAccess from "@/components/QuickAccess";
 import { MdInfo } from "react-icons/md";
 
 export default function DashboardPage() {
@@ -43,21 +41,7 @@ export default function DashboardPage() {
           />
         </div>
       </div>
-      <h2 className="text-xl font-bold text-gray-600 mb-4">Quick access</h2>
-      <div className="flex flex-row gap-4">
-        <NavCard
-          icon={HiMiniSquare3Stack3D}
-          title="Explore sources"
-          href="/sources"
-          desc="View available entropy sources from the catalog."
-        />
-        <NavCard
-          icon={GiPerspectiveDiceSixFacesRandom}
-          title="Ready to generate?"
-          href="/entropy"
-          desc="Pick a source and draw verified random bytes with a signed receipt."
-        />
-      </div>
+      <QuickAccess />
     </div>
   );
 }
