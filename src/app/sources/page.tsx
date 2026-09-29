@@ -2,23 +2,11 @@ import SourceCatalog from "@/components/sources/SourceCatalog";
 import StatCard from "@/components/StatCard";
 import { MdGrade } from "react-icons/md";
 import { TbDatabaseExport } from "react-icons/tb";
-
-async function getSources() {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3002"}/api/sources`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) throw new Error("Failed to fetch sources");
-    return await res.json();
-  } catch {
-    return [];
-  }
-}
+import { getSources } from "@/lib/sources/ems";
 
 export default async function SourcesPage() {
   const sources = await getSources();
-  const onlineCount = sources.filter((s: { online: boolean }) => s.online).length;
+  const onlineCount = sources.filter((s) => s.online).length;
 
   return (
     <div>
