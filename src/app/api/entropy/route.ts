@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const EMS_EGRESS = process.env.EMS_EGRESS_URL ?? "http://93.127.215.63:7081";
+const EMS_API_KEY = process.env.EMS_API_KEY ?? "";
 
 const POLICY_MAP: Record<string, string> = {
-  "cisco-qrng":       "fastest_available",
-  "anu-qrng":         "fastest_available",
-  "iqm-resonance":    "fastest_available",
-  "iqm-qec-2":        "fastest_available",
-  "iqm-qec-3":        "fastest_available",
-  "iqm-qec-4":        "fastest_available",
-  "iqm-qec-5":        "fastest_available",
+   "cisco-qrng":       "highest_quality",
+  "anu-qrng":         "highest_quality",
+  "iqm-resonance":    "quantum_verified",
+  "iqm-qec-2":        "quantum_verified",
+  "iqm-qec-3":        "quantum_verified",
+  "iqm-qec-4":        "quantum_verified",
+  "iqm-qec-5":        "quantum_verified",
   "inmetro-beacon":   "fastest_available",
   "nist-beacon":      "fastest_available",
   "rdseed":           "fastest_available",
@@ -25,10 +26,17 @@ export async function GET(request: NextRequest) {
   const sourceId = searchParams.get("source") ?? "nist-beacon";
   const policy = POLICY_MAP[sourceId] ?? POLICY_MAP.default;
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (EMS_API_KEY) {
+    headers["Authorization"] = `Bearer ${EMS_API_KEY}`;
+  }
+
   try {
     const res = await fetch(`${EMS_EGRESS}/v1/entropy/request`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ bytes, policy }),
       cache: "no-store",
     });

@@ -4,12 +4,14 @@ import { requestEntropy, type EntropyResult } from "@/lib/entropy/generate";
 import { useState } from "react";
 import EntropyInput, { type EntropyGenerateRequest } from "./EntropyInput";
 import EntropyOutput from "./EntropyOutput";
+import ActivityHistoryList from "./ActivityHistoryList";
 
 const HISTORY_LIMIT = 20;
 
 export default function EntropyConsole() {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<EntropyResult | null>(null);
+  const [history, setHistory] = useState<EntropyResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function handleGenerate(request: EntropyGenerateRequest) {
@@ -18,12 +20,11 @@ export default function EntropyConsole() {
     try {
       const next = await requestEntropy(request);
       setResult(next);
-      try {
-        const saved = sessionStorage.getItem("entropy-history");
-        const prev: EntropyResult[] = saved ? JSON.parse(saved) : [];
+      setHistory((prev) => {
         const updated = [next, ...prev].slice(0, HISTORY_LIMIT);
-        sessionStorage.setItem("entropy-history", JSON.stringify(updated));
-      } catch {}
+        try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Entropy request failed.");
     } finally {
@@ -43,6 +44,17 @@ export default function EntropyConsole() {
           </div>
         </section>
       </div>
+
+      <ActivityHistoryList
+        items={history}
+        onDelete={(id) => {
+          setHistory((prev) => {
+            const updated = prev.filter((item) => item.id !== id);
+            try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
+            return updated;
+          });
+        }}
+      />
     </div>
   );
 }

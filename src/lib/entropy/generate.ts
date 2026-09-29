@@ -57,6 +57,7 @@ export async function requestEntropy({
 }: EntropyRequest): Promise<EntropyResult> {
   const res = await fetch(`/api/entropy?source=${sourceId}&bytes=${bytes}`, {
     cache: "no-store",
+    credentials: "include",
   });
 
   const data = await res.json();
