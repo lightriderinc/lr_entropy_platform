@@ -33,7 +33,7 @@ export interface EntropyReceipt {
 
 export interface EntropyResult {
   id: string;
-  /** What was clicked (card/pool/source id). Not the serving source. */
+  /** What was clicked (card / pool / source id). Not the serving source. */
   sourceId: string;
   /** Label of what was clicked. The receipt says what actually served it. */
   sourceName: string;
@@ -47,13 +47,14 @@ export interface EntropyResult {
 }
 
 export interface EntropyRequest {
-  mode: EntropyMode;
-  /** Card id for mode "card"; pool or source id otherwise; "custom" for a custom pool. */
-  id: string;
+  /** Card id (mode "card", the default); pool or source id otherwise. */
+  sourceId: string;
+  sourceName: string;
+  bytes: number;
+  /** Omitted = the source cards, exactly as before modes existed. */
+  mode?: EntropyMode;
   /** Picked source ids, mode "custom" only. */
   ids?: string[];
-  label: string;
-  bytes: number;
 }
 
 /**
@@ -67,7 +68,7 @@ export class EntropyRequestError extends Error {
     message: string,
     readonly status: number,
     readonly outOfEntropy: boolean,
-    readonly sourceId?: string,
+    readonly emsSourceId?: string,
   ) {
     super(message);
     this.name = "EntropyRequestError";
@@ -78,22 +79,26 @@ export function isValidByteCount(bytes: number): boolean {
   return Number.isInteger(bytes) && bytes >= MIN_BYTES && bytes <= MAX_BYTES;
 }
 
-function requestUrl({ mode, id, ids, bytes }: EntropyRequest): string {
+function requestUrl({ sourceId, bytes, mode = "card", ids }: EntropyRequest): string {
   const params = new URLSearchParams({ bytes: String(bytes) });
   if (mode === "card") {
-    params.set("source", id);
+    params.set("source", sourceId);
   } else if (mode === "custom") {
     params.set("mode", mode);
     params.set("ids", (ids ?? []).join(","));
   } else {
     params.set("mode", mode);
-    params.set("id", id);
+    params.set("id", sourceId);
   }
   return `/api/entropy?${params}`;
 }
 
 export async function requestEntropy(req: EntropyRequest): Promise<EntropyResult> {
-  const res = await fetch(requestUrl(req), { cache: "no-store" });
+  const { sourceId, sourceName, bytes, mode = "card" } = req;
+  const res = await fetch(requestUrl(req), {
+    cache: "no-store",
+    credentials: "include",
+  });
 
   const data = await res.json();
   if (!res.ok) {
@@ -115,10 +120,10 @@ export async function requestEntropy(req: EntropyRequest): Promise<EntropyResult
   const receipt = data.receipt as EntropyReceipt;
   return {
     id: receipt.request_id,
-    sourceId: req.id,
-    sourceName: req.label,
-    mode: req.mode,
-    bytes: req.bytes,
+    sourceId,
+    sourceName,
+    mode,
+    bytes,
     format: "hex",
     value: data.bytes_hex as string,
     createdAt: Math.floor(Number(receipt.timestamp_unix_ns) / 1_000_000),

@@ -5,18 +5,18 @@ import {
   POOL_OPTIONS,
   SINGLE_SOURCE_OPTIONS,
 } from "@/lib/entropy/modes";
-import { EMS_EGRESS, fetchMultiSources } from "@/lib/entropy/server-config";
+import { EMS_EGRESS, egressHeaders, fetchMultiSources } from "@/lib/sources/egress";
 
-// Legacy source cards (`?source=<card id>`). Unchanged: each card still maps
-// to a tier policy, and the receipt now shows which pool actually served it.
+// Source cards (`?source=<card id>`): each card draws from the tier pool its
+// source feeds; the receipt shows which pool actually served it.
 const POLICY_MAP: Record<string, string> = {
-  "cisco-qrng":       "fastest_available",
-  "anu-qrng":         "fastest_available",
-  "iqm-resonance":    "fastest_available",
-  "iqm-qec-2":        "fastest_available",
-  "iqm-qec-3":        "fastest_available",
-  "iqm-qec-4":        "fastest_available",
-  "iqm-qec-5":        "fastest_available",
+   "cisco-qrng":       "highest_quality",
+  "anu-qrng":         "highest_quality",
+  "iqm-resonance":    "quantum_verified",
+  "iqm-qec-2":        "quantum_verified",
+  "iqm-qec-3":        "quantum_verified",
+  "iqm-qec-4":        "quantum_verified",
+  "iqm-qec-5":        "quantum_verified",
   "inmetro-beacon":   "fastest_available",
   "nist-beacon":      "fastest_available",
   "rdseed":           "fastest_available",
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(`${EMS_EGRESS}${call.path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: egressHeaders(),
       body: JSON.stringify(call.body),
       cache: "no-store",
     });

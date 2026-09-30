@@ -14,7 +14,7 @@ export default function SidebarNavMain({
   return (
     <>
       <nav className="flex-1 overflow-auto px-3 py-4">
-        <SidebarGroupDefault onNavigate={onNavigate} />
+        <SidebarGroupDefault isAuthenticated={isAuthenticated} onNavigate={onNavigate} />
       </nav>
 
       <div className="border-t border-gray-100 px-3 py-4">

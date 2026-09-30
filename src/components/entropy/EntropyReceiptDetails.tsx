@@ -1,9 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
 import CopyButton from "@/components/ui/CopyButton";
 import type { EntropyResult } from "@/lib/entropy/generate";
 import { modeFromPolicy, sourceDisplayName } from "@/lib/entropy/modes";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -18,8 +18,8 @@ function PassBadge({ pass }: { pass: boolean }) {
   return (
     <span
       className={[
-        "inline-block default-radius px-1.5 py-0.5 text-xs font-medium",
-        pass ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700",
+        "inline-block rounded px-1.5 py-0.5 text-xs font-medium",
+        pass ? "bg-green-50 text-green-700 border border-green-500" : "bg-red-50 text-red-700 border border-red-500",
       ].join(" ")}
     >
       {pass ? "Pass" : "Fail"}
@@ -74,9 +74,9 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
           <Field
             label="Health gates"
             value={
-              <span className="flex gap-2">
-                <span>RCT <PassBadge pass={r.rct_pass} /></span>
-                <span>APT <PassBadge pass={r.apt_pass} /></span>
+              <span className="flex gap-3 mt-1">
+                <span className="flex gap-1.5">RCT  <PassBadge pass={r.rct_pass} /></span>
+                <span className="flex gap-1.5">APT <PassBadge pass={r.apt_pass} /></span>
               </span>
             }
           />
@@ -96,15 +96,54 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-bold text-gray-700">Entropy output</p>
+          <p className="text-sm font-semibold text-gray-700">Entropy output</p>
           <CopyButton value={result.value} />
         </div>
-        <div className="default-radius overflow-x-auto border border-gray-800 bg-gray-800 p-4">
-          <p className="break-all font-mono text-xs leading-relaxed text-green-300">
-            {result.value}
-          </p>
-        </div>
+        {/* key resets the expanded state when a new value is generated */}
+        <EntropyOutput key={result.value} value={result.value} />
       </div>
+    </div>
+  );
+}
+
+function EntropyOutput({ value }: { value: string }) {
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [overflows, setOverflows] = useState(false);
+
+  // Re-measure on resize so the toggle only appears when the text exceeds two lines.
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el || expanded) return;
+    // ResizeObserver fires once on observe, so this also covers the initial measurement.
+    const observer = new ResizeObserver(() =>
+      setOverflows(el.scrollHeight > el.clientHeight + 1),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [value, expanded]);
+
+  return (
+    <div className="default-radius border border-gray-800 bg-gray-800 p-4">
+      <p
+        ref={textRef}
+        className={[
+          "break-all font-mono text-xs leading-relaxed text-green-300",
+          expanded ? "" : "line-clamp-2",
+        ].join(" ")}
+      >
+        {value}
+      </p>
+      {(overflows || expanded) && (
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          aria-expanded={expanded}
+          className="mt-2 text-xs font-medium text-gray-300 hover:text-white cursor-pointer"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
     </div>
   );
 }

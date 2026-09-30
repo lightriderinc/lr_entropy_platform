@@ -1,11 +1,19 @@
 import EntropyConsole from "@/components/entropy/EntropyConsole";
 import InfoBox from "@/components/InfoBox";
+import { getEntropyCatalog } from "@/lib/sources/egress";
+import { getSources } from "@/lib/sources/ems";
 
 export const metadata = {
   title: "Get Entropy",
 };
 
 export default function EntropyPage() {
+  // Not awaited: the promise streams to the client so the rest of the page
+  // renders immediately while the source selector shows a skeleton.
+  const sourcesPromise = getSources();
+  // Same pattern for the pools / custom / single-source catalog (egress).
+  const catalogPromise = getEntropyCatalog();
+
   return (
     <div className="animate-fade-in-up">
       <h1 className="text-2xl font-semibold text-gray-700">Get Entropy</h1>
@@ -19,7 +27,7 @@ export default function EntropyPage() {
           signed with a verifiable receipt.
         </InfoBox>
       </div>
-      <EntropyConsole />
+      <EntropyConsole sourcesPromise={sourcesPromise} catalogPromise={catalogPromise} />
     </div>
   );
 }

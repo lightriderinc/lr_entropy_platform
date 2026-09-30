@@ -6,8 +6,10 @@ import SidebarNavItem from "./SidebarNavItem";
 
 export default function SidebarGroupDefault({
   onNavigate,
+  isAuthenticated,
 }: {
   onNavigate?: () => void;
+  isAuthenticated: boolean;
 }) {
   return (
     <>
@@ -24,12 +26,14 @@ export default function SidebarGroupDefault({
           icon={FaDice}
           onNavigate={onNavigate}
         />
-        <SidebarNavItem
-          name="Session History"
-          href="/history"
-          icon={MdHistory}
-          onNavigate={onNavigate}
-        />
+        {isAuthenticated && (
+          <SidebarNavItem
+            name="Session History"
+            href="/history"
+            icon={MdHistory}
+            onNavigate={onNavigate}
+          />
+        )}
       </SidebarNavGroup>
 
       <SidebarNavGroup label="Explore">
