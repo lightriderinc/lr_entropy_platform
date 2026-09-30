@@ -2,10 +2,12 @@ export default function HowItWorksCard({
   n,
   title,
   desc,
+  last,
 }: {
   n: string;
   title: string;
   desc: string;
+  last?:boolean;
 }) {
   const bits = Number(n).toString(2).padStart(3, "0").split("");
 
@@ -20,7 +22,7 @@ export default function HowItWorksCard({
             />
           ))}
         </div>
-        <span className="text-xl font-bold text-gray-200">{n}</span>
+        <span className="text-sm font-semibold text-gray-200">Step {n}</span>
       </div>
       <h3 className="text-xl font-semibold text-gray-700 mb-2">{title}</h3>
       <span className="text-sm text-gray-400">{desc}</span>

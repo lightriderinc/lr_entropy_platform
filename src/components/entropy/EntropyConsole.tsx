@@ -4,7 +4,6 @@ import { requestEntropy, type EntropyResult } from "@/lib/entropy/generate";
 import { useState } from "react";
 import EntropyInput, { type EntropyGenerateRequest } from "./EntropyInput";
 import EntropyOutput from "./EntropyOutput";
-import ActivityHistoryList from "./ActivityHistoryList";
 
 const HISTORY_LIMIT = 20;
 
@@ -45,7 +44,7 @@ export default function EntropyConsole() {
         </section>
       </div>
 
-      <ActivityHistoryList
+      {/* <ActivityHistoryList
         items={history}
         onDelete={(id) => {
           setHistory((prev) => {
@@ -54,7 +53,7 @@ export default function EntropyConsole() {
             return updated;
           });
         }}
-      />
+      /> */}
     </div>
   );
 }

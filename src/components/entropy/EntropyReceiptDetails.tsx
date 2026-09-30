@@ -70,7 +70,7 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <p className="text-sm font-bold text-gray-700">Entropy output</p>
+          <p className="text-sm font-semibold text-gray-700">Entropy output</p>
           <CopyButton value={result.value} />
         </div>
         {/* key resets the expanded state when a new value is generated */}
