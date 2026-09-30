@@ -1,7 +1,9 @@
 "use client";
 
+import InfoBox from "@/components/InfoBox";
 import { requestEntropy, type EntropyResult } from "@/lib/entropy/generate";
 import type { Source } from "@/lib/sources/filters";
+import Link from "next/link";
 import { useState } from "react";
 import EntropyInput, { type EntropyGenerateRequest } from "./EntropyInput";
 import EntropyOutput from "./EntropyOutput";
@@ -46,19 +48,17 @@ export default function EntropyConsole({
           <div className="flex-1">
             <EntropyOutput result={result} />
           </div>
+          <div className="mt-6">
+            <InfoBox>
+              All entropy you request in this session will be accessible in{" "}
+              <Link href="/history" className="font-medium text-blue-600 underline hover:text-[var(--brand-primary)]">
+                Session History
+              </Link>
+              . This history is reset when you close the tab.
+            </InfoBox>
+          </div>
         </section>
       </div>
-
-      {/* <ActivityHistoryList
-        items={history}
-        onDelete={(id) => {
-          setHistory((prev) => {
-            const updated = prev.filter((item) => item.id !== id);
-            try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
-            return updated;
-          });
-        }}
-      /> */}
     </div>
   );
 }
