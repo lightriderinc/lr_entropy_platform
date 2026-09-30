@@ -1,13 +1,18 @@
 "use client";
 
 import { requestEntropy, type EntropyResult } from "@/lib/entropy/generate";
+import type { Source } from "@/lib/sources/filters";
 import { useState } from "react";
 import EntropyInput, { type EntropyGenerateRequest } from "./EntropyInput";
 import EntropyOutput from "./EntropyOutput";
 
 const HISTORY_LIMIT = 20;
 
-export default function EntropyConsole() {
+export default function EntropyConsole({
+  sourcesPromise,
+}: {
+  sourcesPromise: Promise<Source[]>;
+}) {
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<EntropyResult | null>(null);
   const [history, setHistory] = useState<EntropyResult[]>([]);
@@ -34,7 +39,7 @@ export default function EntropyConsole() {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <EntropyInput generating={generating} error={error} onGenerate={handleGenerate} />
+        <EntropyInput sourcesPromise={sourcesPromise} generating={generating} error={error} onGenerate={handleGenerate} />
 
         <section className="flex flex-col default-radius border-2 border-gray-50 bg-gray-50 p-5">
           <h2 className="block text-md font-semibold text-gray-400 mb-6">Output</h2>

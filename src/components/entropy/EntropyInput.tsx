@@ -2,10 +2,14 @@
 
 import LRButton from "@/components/ui/LRButton";
 import { isValidByteCount, MAX_BYTES, MIN_BYTES } from "@/lib/entropy/generate";
-import { useState } from "react";
+import type { Source } from "@/lib/sources/filters";
+import { Suspense, useState } from "react";
 import { MdArrowForward } from "react-icons/md";
 import EntropyByteCountInput from "./EntropyByteCountInput";
-import EntropySourceSelector, { SOURCES } from "./EntropySourceSelector";
+import EntropySourceSelector, {
+  EntropySourceSelectorSkeleton,
+  type EntropySource,
+} from "./EntropySourceSelector";
 import QecPanel from "./QecPanel";
 import { QEC_MODES } from "./QecModeSelector";
 
@@ -16,29 +20,30 @@ export interface EntropyGenerateRequest {
 }
 
 export default function EntropyInput({
+  sourcesPromise,
   generating,
   error,
   onGenerate,
 }: {
+  sourcesPromise: Promise<Source[]>;
   generating: boolean;
   error: string | null;
   onGenerate: (request: EntropyGenerateRequest) => void;
 }) {
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+  const [sourceData, setSourceData] = useState<EntropySource | null>(null);
   const [bytes, setBytes] = useState<number>(32);
   const [customBytes, setCustomBytes] = useState<string>("32");
   const [isCustom, setIsCustom] = useState(false);
   const [qecEnabled, setQecEnabled] = useState(false);
   const [qecMode, setQecMode] = useState(4);
 
-  const sourceData = SOURCES.find((s) => s.id === selectedSourceId);
-  const isIQM = selectedSourceId === "iqm-resonance";
+  const isIQM = sourceData?.id === "iqm-resonance";
   const bytesValid = isValidByteCount(bytes);
   const canGenerate = !!sourceData && bytesValid && !generating;
 
-  function handleSelectSource(id: string) {
-    setSelectedSourceId(id);
-    if (id !== "iqm-resonance") setQecEnabled(false);
+  function handleSelectSource(source: EntropySource) {
+    setSourceData(source);
+    if (source.id !== "iqm-resonance") setQecEnabled(false);
   }
 
   function handlePreset(n: number) {
@@ -82,7 +87,13 @@ export default function EntropyInput({
 
   return (
     <section className="flex flex-col gap-5 default-radius border-2 border-gray-50 p-5">
-      <EntropySourceSelector selectedId={selectedSourceId} onSelect={handleSelectSource} />
+      <Suspense fallback={<EntropySourceSelectorSkeleton />}>
+        <EntropySourceSelector
+          sourcesPromise={sourcesPromise}
+          selectedId={sourceData?.id ?? null}
+          onSelect={handleSelectSource}
+        />
+      </Suspense>
 
       {isIQM && (
         <QecPanel enabled={qecEnabled} onToggle={setQecEnabled} mode={qecMode} onModeChange={setQecMode} />
