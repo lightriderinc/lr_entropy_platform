@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import CopyButton from "@/components/ui/CopyButton";
 import type { EntropyResult } from "@/lib/entropy/generate";
+import { modeFromPolicy, sourceDisplayName } from "@/lib/entropy/modes";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -31,6 +32,24 @@ function formatIssuedAt(timestampUnixNs: number): string {
   return new Date(timestampUnixNs / 1_000_000).toLocaleString();
 }
 
+// Everything that says where the bytes came from is read from the signed
+// receipt. `result.sourceName` is only what was clicked.
+function ContributingSources({ ids }: { ids: string[] }) {
+  if (!ids || ids.length === 0) {
+    return <span className="text-gray-400">None tracked for this draw</span>;
+  }
+  return (
+    <span className="flex flex-col gap-0.5">
+      {ids.map((id) => (
+        <span key={id}>
+          {sourceDisplayName(id)}{" "}
+          <span className="font-mono text-xs text-gray-400">{id}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function EntropyReceiptDetails({ result }: { result: EntropyResult }) {
   const r = result.receipt;
 
@@ -38,10 +57,17 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
     <div className="space-y-4">
       <div className="default-radius border border-gray-100 bg-gray-50 p-4">
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-          <Field label="Source" value={result.sourceName} />
-          <Field label="Bytes" value={result.bytes} />
+          <Field label="Mode" value={modeFromPolicy(r.policy)} />
+          <Field label="Requested" value={result.sourceName} />
           <Field label="Policy" value={r.policy} />
-          <Field label="Pool" value={r.pool_id} />
+          <Field label="Pool" value={<span className="font-mono">{r.pool_id}</span>} />
+          <div className="col-span-2">
+            <Field
+              label="Contributing sources"
+              value={<ContributingSources ids={r.contributing_sources} />}
+            />
+          </div>
+          <Field label="Bytes" value={result.bytes} />
           <Field label="Extractor" value={r.extractor_alg} />
           <Field label="DRBG" value={r.drbg_alg} />
           <Field label="Quality score" value={r.quality_score} />

@@ -1,17 +1,37 @@
 "use client";
 
-import { useState } from "react";
-import { MdArrowForward, MdBlurOn, MdCellTower, MdDeveloperBoard, MdHub, MdMemory, MdWaves, MdScience } from "react-icons/md";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { MdArrowForward, MdBlurOn, MdCellTower, MdDeveloperBoard, MdHub, MdCheckBox, MdCheckBoxOutlineBlank, MdLayers, MdMemory, MdWaves, MdScience } from "react-icons/md";
 import LRButton from "@/components/ui/LRButton";
 import EntropyOutput from "./EntropyOutput";
 import {
   BYTE_PRESETS,
+  EntropyRequestError,
   MAX_BYTES,
   MIN_BYTES,
   isValidByteCount,
   requestEntropy,
+  type EntropyRequest,
   type EntropyResult,
 } from "@/lib/entropy/generate";
+import {
+  MAX_CUSTOM_SOURCES,
+  MIN_CUSTOM_SOURCES,
+  POOL_OPTIONS,
+  SINGLE_SOURCE_OPTIONS,
+  sourceDisplayName,
+  type EntropyCatalog,
+  type EntropyMode,
+  type MultiSourceStatus,
+  type SourceStatus,
+} from "@/lib/entropy/modes";
+
+const MODE_TABS: { id: EntropyMode; label: string; hint: string }[] = [
+  { id: "pool", label: "Pools", hint: "Draw from a shared tier pool. Several sources feed each pool; the receipt lists which ones contributed." },
+  { id: "custom", label: "Custom pool", hint: "Blend only the named sources, nothing else." },
+  { id: "source", label: "Single source", hint: "Bytes from one source only, from its own dedicated pool." },
+  { id: "card", label: "Source cards", hint: "The original source cards. Each draws from a shared tier pool; the receipt shows which one." },
+];
 
 const SOURCES = [
   {
@@ -68,7 +88,160 @@ const QEC_MODES = [
 
 const HISTORY_LIMIT = 20;
 
+function OptionCard({
+  selected,
+  onClick,
+  icon,
+  title,
+  description,
+  badge,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  icon: ReactNode;
+  title: string;
+  description: string;
+  badge?: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "text-left default-radius border p-3 transition-all cursor-pointer",
+        selected
+          ? "border-[var(--brand-primary)] bg-white"
+          : "border-gray-200 bg-white hover:border-gray-300",
+      ].join(" ")}
+    >
+      <div className="flex items-start gap-2">
+        <span className="mt-0.5 text-lg text-gray-500">{icon}</span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-800 leading-tight">{title}</p>
+          <p className="mt-0.5 text-xs text-gray-400 leading-relaxed">{description}</p>
+          {badge && <div className="mt-1.5">{badge}</div>}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/** Per-source state + custom pool definitions; null when unreachable. */
+async function fetchCatalog(): Promise<EntropyCatalog | null> {
+  try {
+    const res = await fetch("/api/entropy/sources", { cache: "no-store" });
+    return (await res.json()) as EntropyCatalog;
+  } catch {
+    return null;
+  }
+}
+
+/** Where a custom draw would read this source's share from. */
+function ringLabel(s: MultiSourceStatus): string {
+  return s.bytes_from === "own_ring"
+    ? `own pool (${s.ring})`
+    : `shared tier pool (${s.ring})`;
+}
+
+function CustomSourcePicker({
+  sources,
+  picked,
+  loaded,
+  onToggle,
+}: {
+  sources: MultiSourceStatus[];
+  picked: string[];
+  loaded: boolean;
+  onToggle: (id: string) => void;
+}) {
+  if (!loaded) return <p className="text-xs text-gray-400">Loading sources…</p>;
+  if (sources.length === 0) {
+    return <p className="text-xs text-[var(--brand-primary)]">Could not load sources from EMS.</p>;
+  }
+  const full = picked.length >= MAX_CUSTOM_SOURCES;
+  // Selectable first, then the rest, each alphabetical by display name.
+  const ordered = [...sources].sort(
+    (a, b) =>
+      Number(b.selectable) - Number(a.selectable) ||
+      sourceDisplayName(a.source_id).localeCompare(sourceDisplayName(b.source_id)),
+  );
+  return (
+    <div>
+      <p className="mb-2 text-xs text-gray-500">
+        {picked.length} of {MIN_CUSTOM_SOURCES}–{MAX_CUSTOM_SOURCES} selected. Only these sources
+        are blended (cascade extractor).
+      </p>
+      <ul className="flex flex-col gap-1.5">
+        {ordered.map((s) => {
+          const isPicked = picked.includes(s.source_id);
+          const disabled = !s.selectable || (full && !isPicked);
+          return (
+            <li key={s.source_id}>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={isPicked}
+                aria-disabled={disabled}
+                disabled={disabled}
+                onClick={() => onToggle(s.source_id)}
+                className={[
+                  "flex w-full items-start gap-2 text-left default-radius border p-2.5 transition-all",
+                  disabled ? "cursor-not-allowed border-gray-100 bg-gray-50 opacity-60" : "cursor-pointer bg-white",
+                  isPicked ? "border-[var(--brand-primary)]" : !disabled ? "border-gray-200 hover:border-gray-300" : "",
+                ].join(" ")}
+              >
+                <span className="mt-0.5 text-lg text-gray-500">
+                  {isPicked ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-gray-800 leading-tight">
+                    {sourceDisplayName(s.source_id)}{" "}
+                    <span className="font-mono text-[11px] font-normal text-gray-400">{s.source_id}</span>
+                  </span>
+                  <span className="mt-0.5 block text-xs text-gray-500">Bytes from: {ringLabel(s)}</span>
+                  {s.reason && (
+                    <span
+                      className={[
+                        "mt-1 inline-block default-radius px-1.5 py-0.5 text-[11px] font-medium",
+                        s.live && !s.ring_healthy ? "bg-red-50 text-red-700" : "bg-gray-100 text-gray-500",
+                      ].join(" ")}
+                    >
+                      {s.reason}
+                    </span>
+                  )}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/** Live state of a source's own pool, from EMS /v1/entropy/sources. */
+function SourceStateBadge({ status }: { status?: SourceStatus }) {
+  if (!status) return null;
+  const [text, cls] =
+    status.state === "ready"
+      ? [`Ready · up to ${status.max_draw_bytes} B now`, "bg-green-50 text-green-700"]
+      : status.state === "empty"
+        ? ["Out of entropy — refill pending", "bg-amber-50 text-amber-700"]
+        : ["Not collecting", "bg-gray-100 text-gray-500"];
+  return (
+    <span className={`inline-block default-radius px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>
+      {text}
+    </span>
+  );
+}
+
 export default function EntropyConsole() {
+  const [mode, setMode] = useState<EntropyMode>("pool");
+  const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
+  const [pickedIds, setPickedIds] = useState<string[]>([]);
+  const [selectedSingleId, setSelectedSingleId] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<EntropyCatalog | null>(null);
+  const [outOfEntropy, setOutOfEntropy] = useState<string | null>(null);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [bytes, setBytes] = useState<number>(32);
   const [customBytes, setCustomBytes] = useState<string>("32");
@@ -79,22 +252,84 @@ export default function EntropyConsole() {
   const [qecMode, setQecMode] = useState(4);
 
   const sourceData = SOURCES.find((s) => s.id === selectedSourceId);
-  const isIQM = selectedSourceId === "iqm-resonance";
+  const isIQM = mode === "card" && selectedSourceId === "iqm-resonance";
   const bytesValid = isValidByteCount(bytes);
-  const canGenerate = !!sourceData && bytesValid && !generating;
+
+  const refreshCatalog = useCallback(() => {
+    fetchCatalog().then(setCatalog);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchCatalog().then((c) => {
+      if (active) setCatalog(c);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const statusOf = (id: string) => catalog?.sources.find((s) => s.source_id === id);
+  const multiSources = catalog?.multiSources ?? [];
+  // Picks that are still selectable in the latest catalog; a source that
+  // went offline since it was ticked silently drops out of the request.
+  const livePicks = pickedIds.filter((id) =>
+    multiSources.some((s) => s.source_id === id && s.selectable),
+  );
+  const customTitle = livePicks.map(sourceDisplayName).join(" + ");
+
+  function togglePick(id: string) {
+    setPickedIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((p) => p !== id)
+        : prev.length >= MAX_CUSTOM_SOURCES
+          ? prev
+          : [...prev, id],
+    );
+  }
+
+  // The request for whatever is selected in the active mode, or null.
+  function currentRequest(): EntropyRequest | null {
+    if (mode === "pool") {
+      const pool = POOL_OPTIONS.find((p) => p.id === selectedPoolId);
+      return pool ? { mode, id: pool.id, label: pool.name, bytes } : null;
+    }
+    if (mode === "custom") {
+      return livePicks.length >= MIN_CUSTOM_SOURCES && livePicks.length <= MAX_CUSTOM_SOURCES
+        ? { mode, id: "custom", ids: livePicks, label: `Custom pool: ${customTitle}`, bytes }
+        : null;
+    }
+    if (mode === "source") {
+      const source = SINGLE_SOURCE_OPTIONS.find((s) => s.id === selectedSingleId);
+      return source ? { mode, id: source.id, label: `Single source: ${source.name}`, bytes } : null;
+    }
+    if (!sourceData) return null;
+    return {
+      mode,
+      id: isIQM && qecEnabled ? `iqm-qec-${qecMode}` : sourceData.id,
+      label: isIQM && qecEnabled
+        ? `IQM Resonance + QEC (${QEC_MODES.find(m => m.mode === qecMode)?.name})`
+        : sourceData.name,
+      bytes,
+    };
+  }
+
+  const canGenerate = !!currentRequest() && bytesValid && !generating;
+
+  function switchMode(next: EntropyMode) {
+    setMode(next);
+    setError(null);
+    setOutOfEntropy(null);
+  }
 
   async function handleGenerate() {
-    if (!sourceData || !bytesValid) return;
+    const req = currentRequest();
+    if (!req || !bytesValid) return;
     setGenerating(true);
     setError(null);
+    setOutOfEntropy(null);
     try {
-      const next = await requestEntropy({
-        sourceId: isIQM && qecEnabled ? `iqm-qec-${qecMode}` : sourceData.id,
-        sourceName: isIQM && qecEnabled
-          ? `IQM Resonance + QEC (${QEC_MODES.find(m => m.mode === qecMode)?.name})`
-          : sourceData.name,
-        bytes,
-      });
+      const next = await requestEntropy(req);
       setResult(next);
       try {
         const saved = sessionStorage.getItem("entropy-history");
@@ -103,9 +338,15 @@ export default function EntropyConsole() {
         sessionStorage.setItem("entropy-history", JSON.stringify(updated));
       } catch {}
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Entropy request failed.");
+      if (err instanceof EntropyRequestError && err.outOfEntropy) {
+        setOutOfEntropy(err.sourceId ? sourceDisplayName(err.sourceId) : req.label);
+      } else {
+        setError(err instanceof Error ? err.message : "Entropy request failed.");
+      }
     } finally {
       setGenerating(false);
+      // Ready / empty badges change with every draw.
+      if (req.mode === "source" || req.mode === "custom") refreshCatalog();
     }
   }
 
@@ -125,6 +366,69 @@ export default function EntropyConsole() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="flex flex-col gap-5 default-radius border border-gray-100 bg-gray-50 p-5">
 
+          <div>
+            <label className="mb-2.5 block text-sm font-medium text-gray-700">Mode</label>
+            <div role="tablist" className="flex flex-wrap gap-1 default-radius border border-gray-200 bg-white p-1">
+              {MODE_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === tab.id}
+                  onClick={() => switchMode(tab.id)}
+                  className={[
+                    "flex-1 whitespace-nowrap default-radius px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors",
+                    mode === tab.id ? "bg-gray-700 text-white" : "text-gray-600 hover:bg-gray-100",
+                  ].join(" ")}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-gray-400">{MODE_TABS.find((t) => t.id === mode)?.hint}</p>
+          </div>
+
+          {mode === "pool" && (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {POOL_OPTIONS.map((pool) => (
+                <OptionCard
+                  key={pool.id}
+                  selected={selectedPoolId === pool.id}
+                  onClick={() => setSelectedPoolId(pool.id)}
+                  icon={<MdLayers />}
+                  title={pool.name}
+                  description={pool.description}
+                />
+              ))}
+            </div>
+          )}
+
+          {mode === "custom" && (
+            <CustomSourcePicker
+              sources={multiSources}
+              picked={livePicks}
+              loaded={catalog !== null}
+              onToggle={togglePick}
+            />
+          )}
+
+          {mode === "source" && (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {SINGLE_SOURCE_OPTIONS.map((source) => (
+                <OptionCard
+                  key={source.id}
+                  selected={selectedSingleId === source.id}
+                  onClick={() => setSelectedSingleId(source.id)}
+                  icon={<MdBlurOn />}
+                  title={source.name}
+                  description={source.description}
+                  badge={<SourceStateBadge status={statusOf(source.id)} />}
+                />
+              ))}
+            </div>
+          )}
+
+          {mode === "card" && (
           <div>
             <label className="mb-2.5 block text-sm font-medium text-gray-700">Entropy source</label>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -151,6 +455,7 @@ export default function EntropyConsole() {
               ))}
             </div>
           </div>
+          )}
 
           {isIQM && (
             <div className="default-radius border border-blue-200 bg-blue-50 p-4">
@@ -241,6 +546,16 @@ export default function EntropyConsole() {
               </p>
             )}
           </div>
+
+          {outOfEntropy && (
+            <div role="status" className="default-radius border border-amber-200 bg-amber-50 p-3">
+              <p className="text-sm font-medium text-amber-800">Out of entropy — refill pending</p>
+              <p className="mt-0.5 text-xs text-amber-700">
+                {outOfEntropy} has no bytes left to serve right now. It refills on its own;
+                try again in a few minutes, or request fewer bytes.
+              </p>
+            </div>
+          )}
 
           {error && <p className="text-xs text-[var(--brand-primary)]">{error}</p>}
 

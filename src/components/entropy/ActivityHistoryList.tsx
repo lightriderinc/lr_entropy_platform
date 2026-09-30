@@ -50,7 +50,7 @@ export default function ActivityHistoryList({
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="mt-2 font-medium text-sm text-gray-600">
-                  {item.sourceName} . {item.bytes}B
+                  {item.sourceName} · {item.receipt.pool_id} · {item.bytes}B
                 </span>
               </div>
             </div>
