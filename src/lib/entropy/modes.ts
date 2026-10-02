@@ -58,6 +58,16 @@ export const SINGLE_SOURCE_OPTIONS: SingleSourceOption[] = [
     name: "Cisco Outshift QRNG",
     description: "Quantum-generated random numbers from Cisco's cloud quantum service. Bytes come only from Cisco.",
   },
+  {
+    id: "lightrider_qec_001",
+    name: "Light Rider QEC (IQM)",
+    description: "Quantum error-corrected entropy from real IQM Garnet hardware. Bytes come only from QEC circuits.",
+  },
+  {
+    id: "qispace_kds_001",
+    name: "QiSpace TQRND",
+    description: "True quantum random numbers from QiSpace enterprise node. Bytes come only from QiSpace.",
+  },
 ];
 
 // Custom pool size limits (EMS multi.rs MAX_SOURCES, and its 2-source floor).
