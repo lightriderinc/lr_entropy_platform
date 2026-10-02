@@ -53,6 +53,11 @@ export const SINGLE_SOURCE_OPTIONS: SingleSourceOption[] = [
     name: "ANU Quantum RNG",
     description: "Quantum vacuum fluctuations from the Australian National University. Bytes come only from ANU.",
   },
+  {
+    id: "cisco_qrng_001",
+    name: "Cisco Outshift QRNG",
+    description: "Quantum-generated random numbers from Cisco's cloud quantum service. Bytes come only from Cisco.",
+  },
 ];
 
 // Custom pool size limits (EMS multi.rs MAX_SOURCES, and its 2-source floor).
