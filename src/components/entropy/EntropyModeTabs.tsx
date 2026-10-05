@@ -3,10 +3,10 @@
 import type { EntropyMode } from "@/lib/entropy/modes";
 
 export const MODE_TABS: { id: EntropyMode; label: string; hint: string }[] = [
-  { id: "pool", label: "Pools", hint: "Draw from a shared tier pool. Several sources feed each pool; the receipt lists which ones contributed." },
-  { id: "custom", label: "Custom pool", hint: "Blend only the sources you pick, nothing else." },
-  { id: "source", label: "Single source", hint: "Bytes from one source only, from its own dedicated pool." },
-  { id: "card", label: "Source cards", hint: "Each card draws from the shared tier pool its source feeds; the receipt shows which one." },
+  { id: "pool", label: "Pools", hint: "Draw from a tier pool of several sources." },
+  { id: "custom", label: "Custom pool", hint: "Draw from a custom blend of pools and sources." },
+  { id: "source", label: "Single source", hint: "Draw from the dedicated pool of a single source." },
+  { id: "card", label: "Source cards", hint: "Draw from the shared tier pool of each source." },
 ];
 
 export default function EntropyModeTabs({
@@ -29,7 +29,7 @@ export default function EntropyModeTabs({
             onClick={() => onChange(tab.id)}
             className={[
               "flex-1 whitespace-nowrap default-radius px-3 py-1.5 text-xs font-medium cursor-pointer transition-colors",
-              mode === tab.id ? "bg-gray-700 text-white" : "text-gray-600 hover:bg-gray-100",
+              mode === tab.id ? "bg-brand-primary text-white" : "text-gray-600 hover:bg-gray-100",
             ].join(" ")}
           >
             {tab.label}

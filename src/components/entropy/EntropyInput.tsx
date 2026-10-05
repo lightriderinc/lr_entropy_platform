@@ -22,8 +22,8 @@ import EntropySourceSelector, {
   type EntropySource,
 } from "./EntropySourceSelector";
 import PoolSelector from "./PoolSelector";
-import QecPanel from "./QecPanel";
 import { QEC_MODES } from "./QecModeSelector";
+import QecPanel from "./QecPanel";
 import SingleSourceSelector from "./SingleSourceSelector";
 
 /** `mode` omitted = the source cards, as before modes existed. */
