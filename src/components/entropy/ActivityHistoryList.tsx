@@ -79,6 +79,15 @@ export default function ActivityHistoryList({
                 <span className="mt-2 font-medium text-sm text-gray-600">
                   {item.sourceName} · {item.receipt.pool_id} · {item.bytes}B
                 </span>
+                {item.receipt.request_id && (
+                  <Link
+                    href={`/receipts?request=${encodeURIComponent(item.receipt.request_id)}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-2 text-xs font-medium text-blue-600 hover:text-[var(--brand-primary)]"
+                  >
+                    View receipt
+                  </Link>
+                )}
               </div>
             </div>
             <div className="flex flex-col self-end">

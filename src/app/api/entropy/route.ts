@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { after, NextRequest, NextResponse } from "next/server";
 import {
   MAX_CUSTOM_SOURCES,
   MIN_CUSTOM_SOURCES,
@@ -8,6 +9,14 @@ import {
 import { requireLogtoUser } from "@/lib/auth/session";
 import { cloudBilling, isBillingDisabledForDev } from "@/lib/billing/cloudBilling";
 import { runPaidDraw } from "@/lib/billing/paidDraw";
+import {
+  createDraw,
+  extractSignedReceipt,
+  markDraw,
+  markSettled,
+  saveReceiptAndDeliver,
+  type DrawMode,
+} from "@/lib/draws/store";
 import { tokensFor } from "@/lib/entropy/pricing";
 import { EMS_EGRESS, egressHeaders, fetchMultiSources } from "@/lib/sources/egress";
 
@@ -126,10 +135,12 @@ async function finish(kind: "settle" | "refund", drawId: string, arg: string): P
  * POST /api/entropy - one paid draw.
  *
  * Order matters: sign-in -> validate everything (including custom picks
- * against EMS's live list) -> runPaidDraw (lib/billing/paidDraw.ts): CHARGE
- * the shared Light Rider wallet -> draw -> settle on delivery, or refund on
- * ANY failure. The egress is never called unless the charge succeeded, and a
- * user is never charged for bytes they did not receive.
+ * against EMS's live list) -> record the draw -> runPaidDraw
+ * (lib/billing/paidDraw.ts): CHARGE the shared Light Rider wallet -> draw ->
+ * save the signed receipt -> return bytes -> settle; refund on ANY failure.
+ * The egress is never called unless the charge succeeded, a user is never
+ * charged for bytes they did not receive, and no bytes leave without a
+ * stored receipt.
  * Price: 1 LR token (= 1 credit = $0.01) per 256 bytes, minimum 1.
  */
 export async function POST(request: NextRequest) {
@@ -164,13 +175,35 @@ export async function POST(request: NextRequest) {
   }
   if (!call) return json({ message: "Unknown entropy mode or id." }, 400);
 
+  const drawMode: DrawMode = mode ?? "card";
+  const costTokens = tokensFor(bytes);
+
+  // Record the draw first: no row, no charge. A draw id already on record is
+  // a retry of a click that was processed - never draw again for it.
+  try {
+    await createDraw({
+      drawId,
+      userSub: user.sub,
+      mode: drawMode,
+      request: { mode: drawMode, id: body.id ?? null, ids: body.ids ?? null, source: body.source ?? null },
+      bytes,
+      costTokens,
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      return json({ error: "draw_already_processed", message: "This draw was already processed. Generate again for new bytes." }, 409);
+    }
+    console.error("[draws] could not record draw:", err);
+    return json({ error: "unavailable", message: "Entropy is temporarily unavailable. Nothing was charged." }, 503);
+  }
+
   // The draw id is stamped on the signed receipt, tying it to the charge.
   const egressCall = { ...call, body: { ...call.body, application_id: `entropy-site:${drawId}` } };
 
   const result = await runPaidDraw({
     billing: !isBillingDisabledForDev(),
-    costTokens: tokensFor(bytes),
-    charge: () => cloudBilling.charge(drawId, mode ?? "card", bytes, user.email),
+    costTokens,
+    charge: () => cloudBilling.charge(drawId, drawMode, bytes, user.email),
     draw: async () => {
       try {
         const res = await fetch(`${EMS_EGRESS}${egressCall.path}`, {
@@ -186,15 +219,29 @@ export async function POST(request: NextRequest) {
         let data: unknown;
         try { data = JSON.parse(text); } catch { data = { message: text }; }
         console.log("[EMS egress]", egressCall.path, res.status, text.slice(0, 120));
-        return { res: { ok: res.ok, status: res.status }, data, failure: null };
+        return { res: { ok: res.ok, status: res.status }, data, text, failure: null };
       } catch (err) {
         console.error("[EMS egress error]", err);
         const timeout = err instanceof Error && err.name === "TimeoutError";
-        return { res: null, data: null, failure: timeout ? "timeout" : "unreachable" };
+        return { res: null, data: null, text: null, failure: timeout ? "timeout" : "unreachable" };
       }
+    },
+    saveReceipt: async (text) => {
+      await saveReceiptAndDeliver({
+        drawId,
+        userSub: user.sub,
+        mode: drawMode,
+        signedJson: extractSignedReceipt(text),
+      });
     },
     settle: (receiptId) => finish("settle", drawId, receiptId),
     refund: (reason) => finish("refund", drawId, reason),
+    markRefused: (reason) => markDraw(drawId, "refused", reason),
+    markFailed: (reason) => markDraw(drawId, "failed", reason),
+    markSettled: () => markSettled(drawId),
   });
+  // Settle once the bytes are on their way (a settle that never lands is
+  // refunded by cloud's sweep).
+  if (result.afterResponse) after(result.afterResponse);
   return json(result.body, result.status);
 }

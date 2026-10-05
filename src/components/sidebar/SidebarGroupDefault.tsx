@@ -1,6 +1,6 @@
 import { FaDice } from "react-icons/fa6";
 import { HiMiniSquare3Stack3D } from "react-icons/hi2";
-import { MdHistory, MdRocketLaunch } from "react-icons/md";
+import { MdHistory, MdReceiptLong, MdRocketLaunch } from "react-icons/md";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
 
@@ -27,12 +27,20 @@ export default function SidebarGroupDefault({
           onNavigate={onNavigate}
         />
         {isAuthenticated && (
-          <SidebarNavItem
-            name="Session History"
-            href="/history"
-            icon={MdHistory}
-            onNavigate={onNavigate}
-          />
+          <>
+            <SidebarNavItem
+              name="Receipts"
+              href="/receipts"
+              icon={MdReceiptLong}
+              onNavigate={onNavigate}
+            />
+            <SidebarNavItem
+              name="Session History"
+              href="/history"
+              icon={MdHistory}
+              onNavigate={onNavigate}
+            />
+          </>
         )}
       </SidebarNavGroup>
 

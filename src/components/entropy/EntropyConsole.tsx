@@ -4,14 +4,13 @@ import InfoBox from "@/components/InfoBox";
 import { EntropyRequestError, requestEntropy, type EntropyResult } from "@/lib/entropy/generate";
 import { sourceDisplayName, type EntropyCatalog } from "@/lib/entropy/modes";
 import { refreshWallet, setWalletBalance } from "@/lib/billing/walletStore";
+import { appendSessionHistory } from "@/lib/entropy/sessionHistory";
 import type { CreditsNotice } from "./EntropyInput";
 import type { Source } from "@/lib/sources/filters";
 import Link from "next/link";
 import { startTransition, useState } from "react";
 import EntropyInput, { type EntropyGenerateRequest } from "./EntropyInput";
 import EntropyOutput from "./EntropyOutput";
-
-const HISTORY_LIMIT = 20;
 
 /** Re-read the live catalog after a draw. Never rejects (feeds `use()`). */
 async function fetchCatalog(): Promise<EntropyCatalog> {
@@ -37,7 +36,6 @@ export default function EntropyConsole({
   const [creditsNotice, setCreditsNotice] = useState<CreditsNotice | null>(null);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<EntropyResult | null>(null);
-  const [history, setHistory] = useState<EntropyResult[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   function clearMessages() {
@@ -54,11 +52,8 @@ export default function EntropyConsole({
       setResult(next);
       // The draw's response carries the wallet balance after the charge.
       if (typeof next.billing?.balanceTokens === "number") setWalletBalance(next.billing.balanceTokens);
-      setHistory((prev) => {
-        const updated = [next, ...prev].slice(0, HISTORY_LIMIT);
-        try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
-        return updated;
-      });
+      // Append to what this tab already has (never overwrite it).
+      appendSessionHistory(next);
     } catch (err) {
       if (
         err instanceof EntropyRequestError &&

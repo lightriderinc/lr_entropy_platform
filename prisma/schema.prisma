@@ -1,0 +1,83 @@
+// Entropy platform database: the "entropy" schema inside the cloud
+// platform's Supabase project (dev for dev, prod for prod), reached ONLY as
+// the dedicated `entropy_app` role, which owns this schema and can read
+// nothing else (no Customer, CreditLedgerEntry or EntropyCharge).
+//
+// Both connection strings carry `schema=entropy`, so these tables AND this
+// app's migration history (entropy._prisma_migrations) live in that schema,
+// fully independent of cloud's Prisma migrations in `public`.
+//
+//   ENTROPY_DATABASE_URL - runtime: Supabase transaction pooler (6543),
+//                          user entropy_app.<project-ref>, ?pgbouncer=true&schema=entropy
+//   ENTROPY_DIRECT_URL   - migrations: session/direct connection (5432), ?schema=entropy
+//
+// Entropy bytes are NEVER stored: there is no column for them.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("ENTROPY_DATABASE_URL")
+  directUrl = env("ENTROPY_DIRECT_URL")
+}
+
+/// One draw request from a signed-in user, created before the charge.
+/// status: pending -> refused (charge declined, nothing charged)
+///                 -> failed  (charged, then refunded; no bytes returned)
+///                 -> delivered (receipt saved, bytes returned)
+///                 -> settled   (cloud charge settled)
+model Draw {
+  drawId          String    @id @map("draw_id") @db.Uuid
+  logtoUserId     String    @map("logto_user_id")
+  mode            String // pool | custom | source | card
+  /// What was asked for: pool id, source id, custom picks, or card id.
+  request         Json
+  bytes           Int
+  costTokens      Int       @map("cost_tokens")
+  status          String    @default("pending")
+  failureReason   String?   @map("failure_reason")
+  egressRequestId String?   @unique @map("egress_request_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deliveredAt     DateTime? @map("delivered_at")
+  settledAt       DateTime? @map("settled_at")
+
+  receipt Receipt?
+
+  // Receipts page: one user's draws newest-first.
+  @@index([logtoUserId, createdAt(sort: Desc)])
+  @@map("draws")
+}
+
+/// The EMS-signed receipt of a delivered draw, kept verbatim forever.
+model Receipt {
+  /// EMS request_id (the receipt's own id).
+  requestId          String   @id @map("request_id")
+  drawId             String   @unique @map("draw_id") @db.Uuid
+  draw               Draw     @relation(fields: [drawId], references: [drawId])
+  logtoUserId        String   @map("logto_user_id")
+  /// The receipt exactly as the egress returned it. This text is what was
+  /// signed (minus its own signature field); it is served and downloaded
+  /// byte-for-byte and never re-serialised.
+  signedJson         String   @map("signed_json")
+  // Copies of a few receipt fields, for filtering and the list view only.
+  mode               String
+  policy             String
+  poolId             String   @map("pool_id")
+  contributingSources String[] @map("contributing_sources")
+  outputBytes        Int      @map("output_bytes")
+  signatureAlg       String   @map("signature_alg")
+  /// u64 nanoseconds; exceeds JS safe integers, so it is kept as BigInt.
+  timestampUnixNs    BigInt   @map("timestamp_unix_ns")
+  /// sha256(public key bytes) of the EMS key this receipt verified against.
+  signingKeyFingerprint String? @map("signing_key_fingerprint")
+  verifiedAtSave     Boolean  @map("verified_at_save")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([logtoUserId, createdAt(sort: Desc)])
+  @@index([logtoUserId, mode, createdAt(sort: Desc)])
+  @@index([logtoUserId, poolId, createdAt(sort: Desc)])
+  @@map("receipts")
+}

@@ -3,31 +3,21 @@
 import ActivityHistoryList from "@/components/entropy/ActivityHistoryList";
 import InfoBox from "@/components/InfoBox";
 import type { EntropyResult } from "@/lib/entropy/generate";
+import { readSessionHistory, removeFromSessionHistory } from "@/lib/entropy/sessionHistory";
 import { useEffect, useState } from "react";
-
-const STORAGE_KEY = "entropy-history";
 
 export default function ActivityHistoryPage() {
   const [items, setItems] = useState<EntropyResult[]>([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      try {
-        const saved = sessionStorage.getItem(STORAGE_KEY);
-        if (saved) setItems(JSON.parse(saved));
-      } catch {}
+      setItems(readSessionHistory());
     }, 0);
     return () => clearTimeout(timer);
   }, []);
 
   function handleDelete(id: string) {
-    setItems((prev) => {
-      const updated = prev.filter((item) => item.id !== id);
-      try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch {}
-      return updated;
-    });
+    setItems(removeFromSessionHistory(id));
   }
 
   return (
@@ -40,8 +30,10 @@ export default function ActivityHistoryPage() {
       </p>
       <div className="mb-8">
         <InfoBox>
-          This history is stored only in your browser for the current tab
-          session. It is cleared when you close the tab and no backups exist on our servers.<br/> Please copy or export any values you need to keep.
+          This list, including the entropy bytes, is stored only in your browser for the current tab
+          and is cleared when you close it. The bytes are never stored on our servers: copy or export
+          any values you need to keep. Every draw&apos;s signed receipt is kept for your account under
+          Receipts.
         </InfoBox>
       </div>
       <ActivityHistoryList items={items} onDelete={handleDelete} />
