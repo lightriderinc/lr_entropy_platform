@@ -132,6 +132,8 @@ export interface MultiSourceStatus {
   bytes_from: "own_ring" | "tier_fallback";
   ring: string;
   ring_healthy: boolean;
+  /** Bytes on hand in the source's own pool; null/absent for a tier fallback. */
+  bytes_available?: number | null;
   credited_rate_bits_per_byte: number;
 }
 

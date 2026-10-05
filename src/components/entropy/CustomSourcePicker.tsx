@@ -12,7 +12,9 @@ import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
 
 /** Where a custom draw would read this source's share from. */
 function ringLabel(s: MultiSourceStatus): string {
-  return s.bytes_from === "own_ring" ? `own pool (${s.ring})` : `shared tier pool (${s.ring})`;
+  if (s.bytes_from !== "own_ring") return `shared tier pool (${s.ring})`;
+  const onHand = typeof s.bytes_available === "number" ? ` · ${s.bytes_available} B on hand` : "";
+  return `own pool (${s.ring})${onHand}`;
 }
 
 /**
