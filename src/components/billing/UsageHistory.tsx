@@ -12,6 +12,16 @@ export default function UsageHistory() {
   const [more, setMore] = useState<WalletEntry[]>([]);
   const [cursor, setCursor] = useState<string | null | undefined>(undefined);
   const [loading, setLoading] = useState(false);
+  const [basis, setBasis] = useState(wallet.status === "ready" ? wallet.data : null);
+
+  // A fresh first page (after a draw, a purchase, or a refresh) restarts
+  // paging, so pages loaded against the old first page can't duplicate rows.
+  const current = wallet.status === "ready" ? wallet.data : null;
+  if (current !== basis) {
+    setBasis(current);
+    setMore([]);
+    setCursor(undefined);
+  }
 
   if (wallet.status !== "ready") return null;
   const entries = [...wallet.data.entries, ...more];

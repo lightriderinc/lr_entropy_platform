@@ -3,6 +3,7 @@ import CheckoutReturn from "@/components/billing/CheckoutReturn";
 import CreditsSummary from "@/components/billing/CreditsSummary";
 import CreditsTopUp from "@/components/billing/CreditsTopUp";
 import UsageHistory from "@/components/billing/UsageHistory";
+import WalletAutoRefresh from "@/components/billing/WalletAutoRefresh";
 import { getSession } from "@/lib/auth/session";
 
 export const metadata = { title: "Credits" };
@@ -24,6 +25,7 @@ export default async function CreditsPage() {
           Entropy is paid with Light Rider credits: 1 token per 256 bytes, in every mode.
         </p>
       </div>
+      <WalletAutoRefresh />
       <CheckoutReturn />
       <div className="flex flex-col gap-4 lg:flex-row">
         <CreditsSummary />

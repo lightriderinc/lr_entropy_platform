@@ -96,6 +96,8 @@ export type WalletEntry = {
   reason: string;
   counterpartyEmail: string | null;
   createdAt: string;
+  /** Entropy draw/refund rows: what was drawn. bytes is null on rows that predate the link. */
+  entropy?: { mode: string; bytes: number | null } | null;
 };
 export type WalletData = {
   balanceCents: number;

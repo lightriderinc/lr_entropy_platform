@@ -5,20 +5,32 @@ import type { WalletEntry } from "@/lib/billing/cloudBilling";
 // platforms, so history includes cloud activity too.
 
 const MODE_LABELS: Record<string, string> = {
-  pool: "Pool",
-  custom: "Custom pool",
-  source: "Single source",
-  card: "Source card",
+  pool: "pool",
+  custom: "custom pool",
+  source: "single source",
+  card: "source card",
 };
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 && bytes % 1024 === 0) return `${bytes / 1024} KiB`;
+  return `${bytes.toLocaleString()} B`;
+}
+
+/** "(single source, 256 B)", or "(single source)" for rows that predate the byte link. */
+function entropyDetail(e: WalletEntry, prefix: string): string {
+  const mode = e.entropy?.mode ?? e.reason.slice(prefix.length);
+  const parts = [MODE_LABELS[mode] ?? mode];
+  if (typeof e.entropy?.bytes === "number") parts.push(formatBytes(e.entropy.bytes));
+  return `(${parts.join(", ")})`;
+}
 
 export function ledgerLabel(e: WalletEntry): string {
   const r = e.reason;
-  const mode = (prefix: string) => MODE_LABELS[r.slice(prefix.length)] ?? r.slice(prefix.length);
   if (r === "signup_credit") return "Signup credits";
   if (r.startsWith("checkout:")) return "Credit purchase";
   if (r.startsWith("plan_credit:")) return "Plan credits";
-  if (r.startsWith("entropy:draw:")) return `Entropy draw · ${mode("entropy:draw:")}`;
-  if (r.startsWith("entropy:refund:")) return `Entropy refund · ${mode("entropy:refund:")}`;
+  if (r.startsWith("entropy:draw:")) return `Entropy draw ${entropyDetail(e, "entropy:draw:")}`;
+  if (r.startsWith("entropy:refund:")) return `Entropy refund ${entropyDetail(e, "entropy:refund:")}`;
   if (r.startsWith("transfer_sent:")) return e.counterpartyEmail ? `Sent to ${e.counterpartyEmail}` : "Credits sent";
   if (r.startsWith("transfer_received:")) {
     return e.counterpartyEmail ? `Received from ${e.counterpartyEmail}` : "Credits received";

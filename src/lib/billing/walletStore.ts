@@ -38,10 +38,15 @@ export function refreshWallet(): Promise<void> {
   return inflight;
 }
 
-/** Apply the balance a draw reported (tokens), without refetching. */
+/**
+ * Apply the balance a draw reported (tokens) at once, then re-read the wallet
+ * in the background so the history gains the draw's ledger row too. (Before,
+ * only the balance moved, and a later visit to /settings/credits within the
+ * same page session showed the history from the first load.)
+ */
 export function setWalletBalance(balanceTokens: number) {
   if (state.status === "ready") emit({ status: "ready", data: { ...state.data, balanceCents: balanceTokens } });
-  else void refreshWallet();
+  void refreshWallet();
 }
 
 function subscribe(listener: () => void) {
