@@ -31,6 +31,12 @@ export interface EntropyReceipt {
   signature: string;
 }
 
+/** What a paid draw cost, and the wallet balance after it (tokens). */
+export interface DrawBilling {
+  costTokens: number;
+  balanceTokens: number | null;
+}
+
 export interface EntropyResult {
   id: string;
   /** What was clicked (card / pool / source id). Not the serving source. */
@@ -44,6 +50,8 @@ export interface EntropyResult {
   value: string;
   createdAt: number;
   receipt: EntropyReceipt;
+  /** Absent when billing is off (local dev) and on pre-billing history. */
+  billing?: DrawBilling | null;
 }
 
 export interface EntropyRequest {
@@ -69,6 +77,10 @@ export class EntropyRequestError extends Error {
     readonly status: number,
     readonly outOfEntropy: boolean,
     readonly emsSourceId?: string,
+    /** Billing outcome: "insufficient_credits" | "credits_locked" | "reauth_required" | ... */
+    readonly code?: string,
+    /** Where to buy credits, on 402. */
+    readonly buyUrl?: string,
   ) {
     super(message);
     this.name = "EntropyRequestError";
@@ -79,23 +91,22 @@ export function isValidByteCount(bytes: number): boolean {
   return Number.isInteger(bytes) && bytes >= MIN_BYTES && bytes <= MAX_BYTES;
 }
 
-function requestUrl({ sourceId, bytes, mode = "card", ids }: EntropyRequest): string {
-  const params = new URLSearchParams({ bytes: String(bytes) });
-  if (mode === "card") {
-    params.set("source", sourceId);
-  } else if (mode === "custom") {
-    params.set("mode", mode);
-    params.set("ids", (ids ?? []).join(","));
-  } else {
-    params.set("mode", mode);
-    params.set("id", sourceId);
-  }
-  return `/api/entropy?${params}`;
+/** The JSON body for POST /api/entropy. */
+function requestBody({ sourceId, bytes, mode = "card", ids }: EntropyRequest, drawId: string) {
+  if (mode === "card") return { source: sourceId, bytes, drawId };
+  if (mode === "custom") return { mode, ids: ids ?? [], bytes, drawId };
+  return { mode, id: sourceId, bytes, drawId };
 }
 
 export async function requestEntropy(req: EntropyRequest): Promise<EntropyResult> {
   const { sourceId, sourceName, bytes, mode = "card" } = req;
-  const res = await fetch(requestUrl(req), {
+  // One id per click: the charge's idempotency key, so a network retry of
+  // this exact request can never be charged twice.
+  const drawId = crypto.randomUUID();
+  const res = await fetch("/api/entropy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody(req, drawId)),
     cache: "no-store",
     credentials: "include",
   });
@@ -114,6 +125,8 @@ export async function requestEntropy(req: EntropyRequest): Promise<EntropyResult
       res.status,
       outOfEntropy,
       typeof data?.source_id === "string" ? data.source_id : undefined,
+      typeof data?.error === "string" ? data.error : undefined,
+      typeof data?.buyUrl === "string" ? data.buyUrl : undefined,
     );
   }
 
@@ -128,5 +141,6 @@ export async function requestEntropy(req: EntropyRequest): Promise<EntropyResult
     value: data.bytes_hex as string,
     createdAt: Math.floor(Number(receipt.timestamp_unix_ns) / 1_000_000),
     receipt,
+    billing: (data.billing as DrawBilling | null | undefined) ?? null,
   };
 }

@@ -3,6 +3,8 @@
 import InfoBox from "@/components/InfoBox";
 import { EntropyRequestError, requestEntropy, type EntropyResult } from "@/lib/entropy/generate";
 import { sourceDisplayName, type EntropyCatalog } from "@/lib/entropy/modes";
+import { refreshWallet, setWalletBalance } from "@/lib/billing/walletStore";
+import type { CreditsNotice } from "./EntropyInput";
 import type { Source } from "@/lib/sources/filters";
 import Link from "next/link";
 import { startTransition, useState } from "react";
@@ -32,6 +34,7 @@ export default function EntropyConsole({
   // after each single-source / custom draw so ring state stays current.
   const [catalogPromise, setCatalogPromise] = useState(initialCatalog);
   const [outOfEntropy, setOutOfEntropy] = useState<string | null>(null);
+  const [creditsNotice, setCreditsNotice] = useState<CreditsNotice | null>(null);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<EntropyResult | null>(null);
   const [history, setHistory] = useState<EntropyResult[]>([]);
@@ -40,6 +43,7 @@ export default function EntropyConsole({
   function clearMessages() {
     setError(null);
     setOutOfEntropy(null);
+    setCreditsNotice(null);
   }
 
   async function handleGenerate(request: EntropyGenerateRequest) {
@@ -48,17 +52,26 @@ export default function EntropyConsole({
     try {
       const next = await requestEntropy(request);
       setResult(next);
+      // The draw's response carries the wallet balance after the charge.
+      if (typeof next.billing?.balanceTokens === "number") setWalletBalance(next.billing.balanceTokens);
       setHistory((prev) => {
         const updated = [next, ...prev].slice(0, HISTORY_LIMIT);
         try { sessionStorage.setItem("entropy-history", JSON.stringify(updated)); } catch {}
         return updated;
       });
     } catch (err) {
-      if (err instanceof EntropyRequestError && err.outOfEntropy) {
+      if (
+        err instanceof EntropyRequestError &&
+        (err.code === "insufficient_credits" || err.code === "credits_locked")
+      ) {
+        setCreditsNotice({ locked: err.code === "credits_locked", message: err.message, buyUrl: err.buyUrl ?? "/settings/credits" });
+      } else if (err instanceof EntropyRequestError && err.outOfEntropy) {
         setOutOfEntropy(err.emsSourceId ? sourceDisplayName(err.emsSourceId) : request.sourceName);
       } else {
         setError(err instanceof Error ? err.message : "Entropy request failed.");
       }
+      // A failed draw was refunded (or never charged): re-sync the balance.
+      void refreshWallet();
     } finally {
       setGenerating(false);
       // Ready / empty state changes with every draw. In a transition, so
@@ -78,6 +91,7 @@ export default function EntropyConsole({
           generating={generating}
           error={error}
           outOfEntropy={outOfEntropy}
+          creditsNotice={creditsNotice}
           onModeChange={clearMessages}
           onGenerate={handleGenerate}
         />

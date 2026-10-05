@@ -15,4 +15,8 @@ export const logtoConfig = {
   // "Connected accounts" section — no Management API app is registered for
   // this tenant, so that's the only source we have for them.
   scopes: ['email', 'profile', 'identities'],
+  // The cloud billing API (shared Light Rider wallet). Listing it lets this
+  // app request a user access token for it (getAccessToken(config, resource)),
+  // which cloud verifies to know whose wallet to charge.
+  resources: process.env.LOGTO_BILLING_API_RESOURCE ? [process.env.LOGTO_BILLING_API_RESOURCE] : [],
 };

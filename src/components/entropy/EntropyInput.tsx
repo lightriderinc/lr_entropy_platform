@@ -12,7 +12,10 @@ import {
   type EntropyMode,
 } from "@/lib/entropy/modes";
 import type { Source } from "@/lib/sources/filters";
+import Link from "next/link";
 import { Suspense, useState } from "react";
+import { useWallet } from "@/lib/billing/walletStore";
+import { formatTokens, tokensFor } from "@/lib/entropy/pricing";
 import { MdArrowForward } from "react-icons/md";
 import CustomSourcePicker, { CatalogSkeleton } from "./CustomSourcePicker";
 import EntropyByteCountInput from "./EntropyByteCountInput";
@@ -26,6 +29,13 @@ import { QEC_MODES } from "./QecModeSelector";
 import QecPanel from "./QecPanel";
 import SingleSourceSelector from "./SingleSourceSelector";
 
+/** "Not enough credits" / "credits locked" after a refused draw. */
+export interface CreditsNotice {
+  locked: boolean;
+  message: string;
+  buyUrl: string;
+}
+
 /** `mode` omitted = the source cards, as before modes existed. */
 export type EntropyGenerateRequest = EntropyRequest;
 
@@ -35,6 +45,7 @@ export default function EntropyInput({
   generating,
   error,
   outOfEntropy,
+  creditsNotice,
   onModeChange,
   onGenerate,
 }: {
@@ -44,6 +55,7 @@ export default function EntropyInput({
   error: string | null;
   /** Name of the source/pool that just ran dry, or null. */
   outOfEntropy: string | null;
+  creditsNotice: CreditsNotice | null;
   onModeChange: () => void;
   onGenerate: (request: EntropyGenerateRequest) => void;
 }) {
@@ -205,7 +217,23 @@ export default function EntropyInput({
         </div>
       )}
 
+      {creditsNotice && (
+        <div role="status" className="default-radius border border-amber-200 bg-amber-50 p-3">
+          <p className="text-sm font-medium text-amber-800">
+            {creditsNotice.locked ? "Buy credits to unlock entropy" : "Not enough credits"}
+          </p>
+          <p className="mt-0.5 text-xs text-amber-700">
+            {creditsNotice.message}{" "}
+            <Link href={creditsNotice.buyUrl} className="font-medium underline">
+              Buy credits
+            </Link>
+          </p>
+        </div>
+      )}
+
       {error && <p className="text-xs text-[var(--brand-primary)]">{error}</p>}
+
+      <DrawPrice bytes={bytes} valid={bytesValid} />
 
       <LRButton
         type="button"
@@ -219,5 +247,36 @@ export default function EntropyInput({
         {generating ? "Generating…" : "Generate entropy"}
       </LRButton>
     </section>
+  );
+}
+
+/** "This draw costs N tokens", shown before generating, with the balance. */
+function DrawPrice({ bytes, valid }: { bytes: number; valid: boolean }) {
+  const wallet = useWallet();
+  if (!valid) return null;
+  const cost = tokensFor(bytes);
+  const ready = wallet.status === "ready" && !wallet.data.disabled;
+  const short = ready && wallet.data.balanceCents < cost;
+  return (
+    <p className="text-xs text-gray-500">
+      This draw costs <span className="font-semibold text-gray-700">{formatTokens(cost)}</span>
+      <span className="text-gray-400"> (1 token per 256 bytes)</span>
+      {ready && (
+        <>
+          {" · "}
+          <span className={short ? "font-medium text-amber-700" : undefined}>
+            balance {formatTokens(wallet.data.balanceCents)}
+          </span>
+          {short && (
+            <>
+              {" · "}
+              <Link href="/settings/credits" className="font-medium text-blue-600 underline">
+                Buy credits
+              </Link>
+            </>
+          )}
+        </>
+      )}
+    </p>
   );
 }

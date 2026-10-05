@@ -2,6 +2,7 @@ import Link from "next/link";
 import Logo from "./Logo";
 import AccountControl from "./AccountControl";
 import MobileMenu from "./MobileMenu";
+import BalanceChip from "./billing/BalanceChip";
 import { getSession } from "@/lib/auth/session";
 
 export default async function Header() {
@@ -16,6 +17,7 @@ export default async function Header() {
       </div>
 
       <div className="flex items-center gap-1 mr-2">
+        {isAuthenticated && <BalanceChip />}
         <div className="hidden lg:block">
           <AccountControl dropdown />
         </div>

@@ -5,6 +5,10 @@ import {
   POOL_OPTIONS,
   SINGLE_SOURCE_OPTIONS,
 } from "@/lib/entropy/modes";
+import { requireLogtoUser } from "@/lib/auth/session";
+import { cloudBilling, isBillingDisabledForDev } from "@/lib/billing/cloudBilling";
+import { runPaidDraw } from "@/lib/billing/paidDraw";
+import { tokensFor } from "@/lib/entropy/pricing";
 import { EMS_EGRESS, egressHeaders, fetchMultiSources } from "@/lib/sources/egress";
 
 // Source cards (`?source=<card id>`): each card draws from the tier pool its
@@ -70,7 +74,7 @@ async function customCall(
   };
 }
 
-// Explicit modes (`?mode=pool|source&id=...`). Every id is checked
+// Explicit modes (pool / source). Every id is checked
 // against an allowlist, so the client can never steer the egress path.
 function explicitCall(mode: string, id: string, bytes: number): EgressCall | null {
   if (mode === "pool") {
@@ -86,59 +90,111 @@ function explicitCall(mode: string, id: string, bytes: number): EgressCall | nul
   return null;
 }
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const bytes = parseInt(searchParams.get("bytes") ?? "32", 10);
-  const mode = searchParams.get("mode");
+const DRAW_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const EGRESS_TIMEOUT_MS = 25_000;
 
+type DrawBody = {
+  mode?: "pool" | "custom" | "source";
+  id?: string;
+  ids?: string[];
+  /** Source-card id (mode omitted). */
+  source?: string;
+  bytes?: number;
+  /** UUID the browser makes per click; the idempotency key for the charge. */
+  drawId?: string;
+};
+
+const json = (body: unknown, status = 200) => NextResponse.json(body, { status });
+
+/** Settle/refund with one retry. A failure is logged and left to cloud's
+ * sweep, which refunds anything still unsettled after ~10 minutes. */
+async function finish(kind: "settle" | "refund", drawId: string, arg: string): Promise<boolean> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = kind === "settle" ? await cloudBilling.settle(drawId, arg) : await cloudBilling.refund(drawId, arg);
+      if (r.status < 300) return true;
+      console.error(`[billing] ${kind} ${drawId} -> ${r.status}`, r.data);
+      return false;
+    } catch (err) {
+      console.error(`[billing] ${kind} ${drawId} attempt ${attempt + 1} failed:`, err);
+    }
+  }
+  return false;
+}
+
+/**
+ * POST /api/entropy - one paid draw.
+ *
+ * Order matters: sign-in -> validate everything (including custom picks
+ * against EMS's live list) -> runPaidDraw (lib/billing/paidDraw.ts): CHARGE
+ * the shared Light Rider wallet -> draw -> settle on delivery, or refund on
+ * ANY failure. The egress is never called unless the charge succeeded, and a
+ * user is never charged for bytes they did not receive.
+ * Price: 1 LR token (= 1 credit = $0.01) per 256 bytes, minimum 1.
+ */
+export async function POST(request: NextRequest) {
+  let user;
+  try {
+    user = await requireLogtoUser();
+  } catch {
+    return json({ error: "sign_in_required", message: "Sign in to generate entropy." }, 401);
+  }
+
+  const body = ((await request.json().catch(() => null)) ?? {}) as DrawBody;
+  const bytes = Number(body.bytes);
+  if (!Number.isInteger(bytes) || bytes < MIN_BYTES || bytes > MAX_BYTES) {
+    return json({ message: `bytes must be ${MIN_BYTES}–${MAX_BYTES}` }, 400);
+  }
+  const drawId = String(body.drawId ?? "");
+  if (!DRAW_ID_RE.test(drawId)) return json({ message: "Missing or invalid drawId." }, 400);
+
+  // Build (and fully validate) the egress call before any money moves.
   let call: EgressCall | null;
-  if (mode) {
-    if (!Number.isInteger(bytes) || bytes < MIN_BYTES || bytes > MAX_BYTES) {
-      return NextResponse.json(
-        { message: `bytes must be ${MIN_BYTES}–${MAX_BYTES}` },
-        { status: 400 }
-      );
-    }
-    if (mode === "custom") {
-      const custom = await customCall(searchParams.get("ids") ?? "", bytes);
-      if ("error" in custom) {
-        return NextResponse.json({ message: custom.error }, { status: custom.status });
-      }
-      call = custom.call;
-    } else {
-      call = explicitCall(mode, searchParams.get("id") ?? "", bytes);
-    }
-    if (!call) {
-      return NextResponse.json({ message: "Unknown entropy mode or id." }, { status: 400 });
-    }
+  const mode = body.mode;
+  if (mode === "custom") {
+    const custom = await customCall((body.ids ?? []).join(","), bytes);
+    if ("error" in custom) return json({ message: custom.error }, custom.status);
+    call = custom.call;
+  } else if (mode) {
+    call = explicitCall(mode, String(body.id ?? ""), bytes);
   } else {
-    const sourceId = searchParams.get("source") ?? "nist-beacon";
+    const sourceId = body.source ?? "nist-beacon";
     const policy = POLICY_MAP[sourceId] ?? POLICY_MAP.default;
     call = { path: "/v1/entropy/request", body: { bytes, policy } };
   }
+  if (!call) return json({ message: "Unknown entropy mode or id." }, 400);
 
-  try {
-    const res = await fetch(`${EMS_EGRESS}${call.path}`, {
-      method: "POST",
-      headers: egressHeaders(),
-      body: JSON.stringify(call.body),
-      cache: "no-store",
-    });
+  // The draw id is stamped on the signed receipt, tying it to the charge.
+  const egressCall = { ...call, body: { ...call.body, application_id: `entropy-site:${drawId}` } };
 
-    // Egress errors are plain text, except single-source ones, which are
-    // JSON ({ error: "source_empty", source_id, message, ... }). Both reach
-    // the client as JSON with a `message`.
-    const text = await res.text();
-    let data: unknown;
-    try { data = JSON.parse(text); } catch { data = { message: text }; }
-
-    console.log("[EMS egress]", call.path, res.status, text.slice(0, 120));
-    return NextResponse.json(data, { status: res.ok ? 200 : res.status });
-  } catch (err) {
-    console.error("[EMS egress error]", err);
-    return NextResponse.json(
-      { message: "Could not reach EMS", error: String(err) },
-      { status: 502 }
-    );
-  }
+  const result = await runPaidDraw({
+    billing: !isBillingDisabledForDev(),
+    costTokens: tokensFor(bytes),
+    charge: () => cloudBilling.charge(drawId, mode ?? "card", bytes, user.email),
+    draw: async () => {
+      try {
+        const res = await fetch(`${EMS_EGRESS}${egressCall.path}`, {
+          method: "POST",
+          headers: egressHeaders(),
+          body: JSON.stringify(egressCall.body),
+          cache: "no-store",
+          signal: AbortSignal.timeout(EGRESS_TIMEOUT_MS),
+        });
+        // Egress errors are plain text, except single-source ones, which are
+        // JSON ({ error: "source_empty", source_id, message, ... }).
+        const text = await res.text();
+        let data: unknown;
+        try { data = JSON.parse(text); } catch { data = { message: text }; }
+        console.log("[EMS egress]", egressCall.path, res.status, text.slice(0, 120));
+        return { res: { ok: res.ok, status: res.status }, data, failure: null };
+      } catch (err) {
+        console.error("[EMS egress error]", err);
+        const timeout = err instanceof Error && err.name === "TimeoutError";
+        return { res: null, data: null, failure: timeout ? "timeout" : "unreachable" };
+      }
+    },
+    settle: (receiptId) => finish("settle", drawId, receiptId),
+    refund: (reason) => finish("refund", drawId, reason),
+  });
+  return json(result.body, result.status);
 }
