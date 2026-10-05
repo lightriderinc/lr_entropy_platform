@@ -2,7 +2,11 @@
 
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import type { EntropyResult } from "@/lib/entropy/generate";
+import Link from "next/link";
 import { useState } from "react";
+import { FaDice } from "react-icons/fa6";
+import { GiPerspectiveDiceSixFacesRandom } from "react-icons/gi";
+import { MdArrowForward } from "react-icons/md";
 import ActivityDetailModal from "./ActivityDetailModal";
 import ActivityItemMenu from "./ActivityItemMenu";
 
@@ -28,8 +32,31 @@ export default function ActivityHistoryList({
 
   if (items.length === 0) {
     return (
-      <div className="default-radius border border-dashed border-gray-200 p-8 text-center text-sm text-gray-400">
-        Entropy you generate will be listed here.
+      <div className="default-radius border border-dashed border-gray-200 bg-gray-50 p-16 text-center mt-5 text-sm text-gray-500">
+        <div className="mb-3 flex items-center justify-center text-6xl text-gray-200">
+          <GiPerspectiveDiceSixFacesRandom />
+        </div>
+        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+          Submit your first entropy request
+        </h3>
+        <div className="mb-6">
+          <span>
+            Entropy generated this session will appear here. You can view full request details and output once they are generated.
+          </span>
+        </div>
+
+        <div>
+          <Link
+            href="/entropy"
+            className="inline-flex w-fit items-center gap-1.5 default-radius text-sm font-medium text-gray-700 transition-colors"
+          >
+            <FaDice className="text-xl text-gray-400" />
+            <span className="brand-link flex flex-row inline-flex items-center gap-1">
+              {" "}
+              Get Entropy <MdArrowForward className="text-xs" />
+            </span>
+          </Link>
+        </div>
       </div>
     );
   }
