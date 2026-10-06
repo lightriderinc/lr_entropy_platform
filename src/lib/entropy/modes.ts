@@ -105,15 +105,14 @@ export const SITE_SOURCES: SiteSource[] = [
     kind: "Superconducting QPU, refilled manually",
     tier: "quantum_verified",
   },
-  // --- Coming soon -----------------------------------------------------------
   {
     id: "iqm_resonance_001",
     name: "IQM Resonance",
-    description: "Cloud superconducting quantum processor measurement noise.",
+    description: "Raw measurement noise from IQM's cloud superconducting quantum processor. Bytes come only from IQM.",
     kind: "Superconducting QPU",
     tier: "highest_quality",
-    comingSoon: true,
   },
+  // --- Coming soon -----------------------------------------------------------
   ...(
     [
       ["ibm_boston_001", "IBM Boston"],
@@ -170,6 +169,21 @@ export function isOfferedSource(id: string): boolean {
 }
 
 export const COMING_SOON_SOURCES: SiteSource[] = SITE_SOURCES.filter((s) => s.comingSoon);
+
+/**
+ * Single source: a card whose "QEC error correction" toggle draws from a
+ * different source with its own ring. IQM Resonance raw (off) vs the same
+ * IQM hardware through the Light Rider SDK with QEC (on). The QEC source is
+ * folded into its parent's card rather than listed twice.
+ */
+export const QEC_VARIANT: Record<string, string> = {
+  iqm_resonance_001: "lightrider_qec_001",
+};
+
+/** The source a single-source draw really uses for this card + toggle. */
+export function singleSourceDrawId(cardId: string, qec: boolean): string {
+  return qec && QEC_VARIANT[cardId] ? QEC_VARIANT[cardId] : cardId;
+}
 
 export interface SingleSourceOption {
   id: string;

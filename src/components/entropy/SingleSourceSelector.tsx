@@ -2,13 +2,16 @@
 
 import {
   COMING_SOON_SOURCES,
+  QEC_VARIANT,
   SINGLE_SOURCE_OPTIONS,
+  sourceDisplayName,
   type EntropyCatalog,
   type SourceStatus,
 } from "@/lib/entropy/modes";
 import { use } from "react";
 import { MdBlurOn } from "react-icons/md";
 import EntropySourceCard from "./EntropySourceCard";
+import QecPanel from "./QecPanel";
 
 /** Live state of a source's own pool, from EMS /v1/entropy/sources. */
 function SourceStateBadge({ status }: { status: SourceStatus }) {
@@ -23,30 +26,71 @@ function SourceStateBadge({ status }: { status: SourceStatus }) {
   );
 }
 
+/** "Drawing from: <name> (<id>) · <state>" under the QEC toggle. */
+function DrawingFrom({ id, status, qec }: { id: string; status: SourceStatus | undefined; qec: boolean }) {
+  const state =
+    status?.state === "ready"
+      ? `up to ${status.max_draw_bytes} B now`
+      : status?.state === "empty"
+        ? "out of entropy, refill pending"
+        : "not available";
+  return (
+    <>
+      Drawing from <span className="font-semibold">{sourceDisplayName(id)}</span>{" "}
+      <span className="font-mono text-[11px] text-gray-400">{id}</span>
+      {qec ? ": IQM hardware through the Light Rider SDK, with QEC" : ": raw IQM measurements, no QEC"}
+      {" · "}
+      {state}
+    </>
+  );
+}
+
 export default function SingleSourceSelector({
   catalogPromise,
   selectedId,
   onSelect,
+  qec,
+  onQecChange,
 }: {
   catalogPromise: Promise<EntropyCatalog>;
+  /** The card picked (the parent id when a QEC variant is in use). */
   selectedId: string | null;
   onSelect: (id: string) => void;
+  qec: boolean;
+  onQecChange: (qec: boolean) => void;
 }) {
   const catalog = use(catalogPromise);
+  const statusOf = (id: string) => {
+    const s = catalog.sources.find((x) => x.source_id === id);
+    return s && s.state !== "unavailable" ? s : undefined;
+  };
   // Available: only sources with their OWN pool can be served alone. EMS
   // reports a source with no own ring as `unavailable`; it is not offered
   // (an empty own pool is still listed, with its refill-pending badge).
   const offered = SINGLE_SOURCE_OPTIONS.flatMap((source) => {
-    const status = catalog.sources.find((s) => s.source_id === source.id);
-    return status && status.state !== "unavailable" ? [{ source, status }] : [];
+    const status = statusOf(source.id);
+    return status ? [{ source, status }] : [];
   });
+  const offeredIds = new Set(offered.map((o) => o.source.id));
+  // A QEC variant lives under its parent's toggle, not as a second card,
+  // unless the parent itself isn't offered right now.
+  const variantOf = new Map(Object.entries(QEC_VARIANT).map(([parent, variant]) => [variant, parent]));
+  const cards = offered.filter(({ source }) => {
+    const parent = variantOf.get(source.id);
+    return !(parent && offeredIds.has(parent));
+  });
+
+  const variantId = selectedId ? QEC_VARIANT[selectedId] : undefined;
+  const showQec = !!selectedId && !!variantId && offeredIds.has(selectedId);
+  const variantStatus = variantId ? statusOf(variantId) : undefined;
+
   return (
     <div className="flex flex-col gap-2">
-      {offered.length === 0 && (
+      {cards.length === 0 && (
         <p className="text-xs text-gray-500">No single sources are available right now.</p>
       )}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {offered.map(({ source, status }) => (
+        {cards.map(({ source, status }) => (
           <EntropySourceCard
             key={source.id}
             id={source.id}
@@ -71,6 +115,21 @@ export default function SingleSourceSelector({
           />
         ))}
       </div>
+      {showQec && (
+        <QecPanel
+          enabled={qec}
+          onToggle={onQecChange}
+          // Can't switch QEC on while its pool is unavailable; can always switch off.
+          toggleDisabled={!qec && !variantStatus}
+          note={
+            qec ? (
+              <DrawingFrom id={variantId} status={variantStatus} qec />
+            ) : (
+              <DrawingFrom id={selectedId} status={statusOf(selectedId)} qec={false} />
+            )
+          }
+        />
+      )}
     </div>
   );
 }

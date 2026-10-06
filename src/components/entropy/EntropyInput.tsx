@@ -7,6 +7,7 @@ import {
   MIN_CUSTOM_SOURCES,
   POOL_OPTIONS,
   SINGLE_SOURCE_OPTIONS,
+  singleSourceDrawId,
   sourceDisplayName,
   type EntropyCatalog,
   type EntropyMode,
@@ -62,6 +63,9 @@ export default function EntropyInput({
   const [mode, setMode] = useState<EntropyMode>("pool");
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
   const [selectedSingleId, setSelectedSingleId] = useState<string | null>(null);
+  // Single source "QEC error correction" toggle (IQM card): picks a real,
+  // separate source (QEC_VARIANT), unlike the Source cards QEC modes.
+  const [singleQec, setSingleQec] = useState(false);
   const [pickedIds, setPickedIds] = useState<string[]>([]);
   const [sourceData, setSourceData] = useState<EntropySource | null>(null);
   const [bytes, setBytes] = useState<number>(32);
@@ -80,9 +84,11 @@ export default function EntropyInput({
       return pool ? { mode, sourceId: pool.id, sourceName: pool.name, bytes } : null;
     }
     if (mode === "source") {
-      const source = SINGLE_SOURCE_OPTIONS.find((s) => s.id === selectedSingleId);
+      if (!selectedSingleId) return null;
+      // The source the draw really uses (the receipt names the same one).
+      const source = SINGLE_SOURCE_OPTIONS.find((s) => s.id === singleSourceDrawId(selectedSingleId, singleQec));
       return source
-        ? { mode, sourceId: source.id, sourceName: `Single source: ${source.name}`, bytes }
+        ? { mode, sourceId: source.id, sourceName: `Single source: ${sourceDisplayName(source.id)}`, bytes }
         : null;
     }
     if (mode === "custom") {
@@ -179,6 +185,8 @@ export default function EntropyInput({
             catalogPromise={catalogPromise}
             selectedId={selectedSingleId}
             onSelect={setSelectedSingleId}
+            qec={singleQec}
+            onQecChange={setSingleQec}
           />
         </Suspense>
       )}
