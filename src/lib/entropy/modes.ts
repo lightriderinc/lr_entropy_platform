@@ -46,7 +46,21 @@ export interface SingleSourceOption {
   description: string;
 }
 
-// Pilot: ANU only. Must stay a subset of SINGLE_SOURCES in ems-egress.
+// Sources with their own private ring in EMS. Must stay a subset of
+// SINGLE_SOURCES in ems-egress/src/config.rs.
+//
+// Excluded sources and why:
+//   nist_beacon_001       — public beacon, zero secret entropy
+//   inmetro_beacon_001    — public beacon, zero secret entropy
+//   curby_q_jila_001      — public beacon, zero secret entropy
+//   curby_rng_jila_001    — public beacon, zero secret entropy
+//   lightrider_qec_sim_001 — simulator, not real entropy
+//   ql_lab_001            — stand-in, no physical hardware attached
+//   hwrng_hq_001          — reads same /dev/random as rdseed, duplicate
+//   hwrng_qv_001          — reads same /dev/random as rdseed, duplicate
+//   rdseed_local_001      — Rust collector, source ring not yet supported
+//   ibm_*                 — all offline
+//   rigetti_cepheus_001   — real QPU but per-chiplet complexity, adding last
 export const SINGLE_SOURCE_OPTIONS: SingleSourceOption[] = [
   {
     id: "anu_aws_001",
@@ -67,6 +81,11 @@ export const SINGLE_SOURCE_OPTIONS: SingleSourceOption[] = [
     id: "qispace_kds_001",
     name: "QiSpace TQRND",
     description: "True quantum random numbers from QiSpace enterprise node. Bytes come only from QiSpace.",
+  },
+  {
+    id: "iqm_resonance_001",
+    name: "IQM Resonance",
+    description: "Cloud superconducting quantum processor on IQM Garnet hardware. Bytes come only from IQM.",
   },
 ];
 

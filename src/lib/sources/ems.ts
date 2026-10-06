@@ -2,8 +2,25 @@ import type { Source } from "./filters";
 
 const EMS_ADMIN = process.env.EMS_ADMIN_URL ?? "http://93.127.215.63:5001";
 
-// Only these six sources are shown on the platform.
-// Keyed by source_id from EMS.
+// Genuine sources shown on the platform, keyed by source_id from EMS.
+//
+// Excluded sources and why:
+//   nist_beacon_001        — public beacon, zero secret entropy, anyone can download its values
+//   inmetro_beacon_001     — public beacon, zero secret entropy, anyone can download its values
+//   curby_q_jila_001       — public beacon, zero secret entropy
+//   curby_rng_jila_001     — public beacon, zero secret entropy
+//   lightrider_qec_sim_001 — classical simulator, not real quantum entropy
+//   ql_lab_001             — stand-in only, no physical hardware attached to this host
+//   hwrng_hq_001           — reads same /dev/random as rdseed, not an independent source
+//   hwrng_qv_001           — reads same /dev/random as rdseed, not an independent source
+//   rdseed_local_001       — classical CPU entropy, Rust collector does not support source rings yet
+//   ibm_boston_001         — offline
+//   ibm_fez_001            — offline
+//   ibm_kingston_001       — offline
+//   ibm_marrakesh_001      — offline
+//   ibm_miami_001          — offline
+//   ibm_pittsburgh_001     — offline
+//   rigetti_cepheus_001    — real QPU but per-chiplet pool complexity, adding last
 const SOURCE_META: Record<string, Omit<Source, "online">> = {
   anu_aws_001: {
     name: "ANU Quantum RNG",
@@ -17,23 +34,18 @@ const SOURCE_META: Record<string, Omit<Source, "online">> = {
   },
   iqm_resonance_001: {
     name: "IQM Resonance",
-    type: "Superconducting QPU with optional QEC error correction",
+    type: "Superconducting QPU — IQM Garnet hardware",
+    policy: "quantum-verified",
+  },
+  lightrider_qec_001: {
+    name: "Light Rider QEC (IQM)",
+    type: "Quantum error-corrected entropy — real IQM Garnet hardware",
     policy: "highest-quality",
   },
-  inmetro_beacon_001: {
-    name: "Inmetro Beacon",
-    type: "Public randomness beacon (Brazil)",
-    policy: "fastest",
-  },
-  nist_beacon_001: {
-    name: "NIST Beacon",
-    type: "Public randomness beacon (US)",
-    policy: "fastest",
-  },
-  rdseed_local_001: {
-    name: "RDSEED",
-    type: "CPU hardware entropy pool",
-    policy: "fastest",
+  qispace_kds_001: {
+    name: "QiSpace TQRND",
+    type: "True quantum random number generator — QiSpace enterprise node",
+    policy: "highest-quality",
   },
 };
 
@@ -52,7 +64,6 @@ export async function getSources(): Promise<Source[]> {
 
     const allSources = await res.json();
 
-    // Filter to only our six known sources and map to the Source shape
     return allSources
       .filter((s: { source_id: string }) => SOURCE_META[s.source_id])
       .map((s: { source_id: string; status: string }) => ({
@@ -61,7 +72,6 @@ export async function getSources(): Promise<Source[]> {
       }));
   } catch (err) {
     console.error("[getSources error]", err);
-    // Fall back to hardcoded list if EMS is unreachable
     return Object.values(SOURCE_META).map((s) => ({ ...s, online: true }));
   }
 }
