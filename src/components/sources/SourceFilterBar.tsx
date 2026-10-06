@@ -6,6 +6,7 @@ import { MdCheck, MdClose, MdExpandLess, MdExpandMore, MdFilterList } from "reac
 
 const POLICY_OPTIONS: { value: string; label: string }[] = [
   { value: "highest-quality", label: "Highest quality" },
+  { value: "quantum-verified", label: "Quantum verified" },
   { value: "fastest", label: "Fastest" },
 ];
 

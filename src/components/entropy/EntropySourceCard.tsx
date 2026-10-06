@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import ComingSoonTag from "@/components/ui/ComingSoonTag";
 
 interface EntropySourceCardProps {
   id: string;
@@ -8,6 +9,7 @@ interface EntropySourceCardProps {
   description: string;
   icon: React.ReactNode;
   selected: boolean;
+  /** Coming soon: greyed out, not selectable, tagged. */
   disabled?: boolean;
   /** Optional status line under the description (e.g. live ring state). */
   badge?: React.ReactNode;
@@ -27,6 +29,7 @@ export default function EntropySourceCard({
     <button
       type="button"
       disabled={disabled}
+      aria-disabled={disabled}
       onClick={onSelect}
       className={[
         "relative text-left w-full p-4 default-radius border transition-all duration-150",
@@ -37,14 +40,7 @@ export default function EntropySourceCard({
             : "cursor-pointer border-gray-100 bg-white card-hover-primary",
       ].join(" ")}
     >
-      {disabled && (
-        <span
-          className="absolute top-0.5 right-0.5 text-2xs font-medium text-white px-1.5 py-0.5 default-radius leading-tight"
-          style={{ backgroundColor: "var(--brand-tertiary)" }}
-        >
-          Available at EMS Launch
-        </span>
-      )}
+      {disabled && <ComingSoonTag className="absolute top-2 right-2" />}
 
       {selected && !disabled && (
         <span className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center bg-[var(--brand-primary)]">
@@ -66,7 +62,7 @@ export default function EntropySourceCard({
         </span>
       )}
 
-      <div className="flex items-start gap-3 pr-12">
+      <div className={["flex items-start gap-3", disabled ? "pr-24" : "pr-12"].join(" ")}>
         <span
           className={[
             "mt-0.5 text-xl shrink-0",

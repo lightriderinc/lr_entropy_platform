@@ -1,11 +1,7 @@
-import type { Source } from "@/lib/sources/filters";
+import type { DirectorySource } from "@/lib/sources/filters";
+import { PolicyTag, SourceStatus } from "./SourceStatus";
 
-const POLICY_LABEL: Record<string, string> = {
-  "highest-quality": "Highest quality",
-  fastest: "Fastest",
-};
-
-export default function SourceList({ sources }: { sources: Source[] }) {
+export default function SourceList({ sources }: { sources: DirectorySource[] }) {
   return (
     <div className="overflow-x-auto default-radius border border-gray-100">
       <table className="w-full text-left text-sm">
@@ -18,41 +14,30 @@ export default function SourceList({ sources }: { sources: Source[] }) {
           </tr>
         </thead>
         <tbody>
-          {sources.map((s) => (
-            <tr
-              key={s.name}
-              className="border-b border-gray-100 bg-white transition-colors last:border-0 hover:bg-gray-50"
-            >
-              <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800">
-                {s.name}
-              </td>
-              <td className="px-4 py-3 text-gray-700">{s.type}</td>
-              <td className="whitespace-nowrap px-4 py-3">
-                <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded ${
-                    s.policy === "highest-quality"
-                      ? "text-purple-700 border border-purple-600 bg-purple-100"
-                      : "text-emerald-600 border border-emerald-600 bg-emerald-50"
-                  }`}
-                >
-                  {POLICY_LABEL[s.policy] ?? s.policy}
-                </span>
-              </td>
-              <td className="whitespace-nowrap px-4 py-3">
-                {s.online ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    Online
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400">
-                    <span className="h-2 w-2 rounded-full bg-gray-400" />
-                    Offline
-                  </span>
-                )}
-              </td>
-            </tr>
-          ))}
+          {sources.map((s) => {
+            const comingSoon = s.availability === "coming_soon";
+            return (
+              <tr
+                key={s.id}
+                aria-disabled={comingSoon || undefined}
+                className={[
+                  "border-b border-gray-100 transition-colors last:border-0",
+                  comingSoon ? "bg-gray-50" : "bg-white hover:bg-gray-50",
+                ].join(" ")}
+              >
+                <td className={`whitespace-nowrap px-4 py-3 font-medium ${comingSoon ? "text-gray-400" : "text-gray-800"}`}>
+                  {s.name}
+                </td>
+                <td className={`px-4 py-3 ${comingSoon ? "text-gray-400" : "text-gray-700"}`}>{s.type}</td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <PolicyTag policy={s.policy} muted={comingSoon} />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3">
+                  <SourceStatus source={s} />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

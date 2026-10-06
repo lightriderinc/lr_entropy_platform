@@ -40,47 +40,158 @@ export const POOL_OPTIONS: PoolOption[] = [
   },
 ];
 
+export type TierId = "highest_quality" | "quantum_verified" | "fastest";
+
+/**
+ * A source the site shows. Every source appears in exactly one way:
+ *
+ *   Available   - listed here without `comingSoon`, AND it has its own ring
+ *                 (egress catalogs). An empty own ring is still Available,
+ *                 with the "refill pending" badge.
+ *   Coming soon - listed here with `comingSoon: true`: shown greyed out,
+ *                 never selectable. Moving one to Available = deleting
+ *                 that `comingSoon: true` (it must also be in ems-egress
+ *                 SINGLE_SOURCES to be drawn alone).
+ *   Hidden      - isHiddenSource(): never shown anywhere.
+ *
+ * Anything else (not listed, or listed but with no own ring yet) is not
+ * shown either.
+ */
+export interface SiteSource {
+  id: string;
+  name: string;
+  description: string;
+  /** One-line kind for the Sources page. */
+  kind: string;
+  /** Tier pool this source's surplus feeds. */
+  tier: TierId;
+  comingSoon?: true;
+}
+
+export const SITE_SOURCES: SiteSource[] = [
+  {
+    id: "anu_aws_001",
+    name: "ANU Quantum RNG",
+    description: "Quantum vacuum fluctuations from the Australian National University. Bytes come only from ANU.",
+    kind: "Quantum optical source (photon vacuum)",
+    tier: "highest_quality",
+  },
+  {
+    id: "cisco_qrng_001",
+    name: "Cisco Outshift QRNG",
+    description: "Quantum-generated random numbers from Cisco's cloud quantum service. Bytes come only from Cisco.",
+    kind: "Cloud quantum random number generator",
+    tier: "highest_quality",
+  },
+  {
+    id: "lightrider_qec_001",
+    name: "Light Rider QEC (IQM)",
+    description: "Quantum error-corrected entropy from real IQM Garnet hardware. Bytes come only from QEC circuits.",
+    kind: "Error-corrected circuits on IQM superconducting QPU",
+    tier: "highest_quality",
+  },
+  {
+    id: "qispace_kds_001",
+    name: "QiSpace TQRND",
+    description: "True quantum random numbers from QiSpace enterprise node. Bytes come only from QiSpace.",
+    kind: "Enterprise quantum random number node",
+    tier: "highest_quality",
+  },
+  {
+    id: "rigetti_cepheus_001",
+    name: "Rigetti Cepheus-1-108Q (QPU, refilled manually)",
+    description:
+      "Measurement entropy from Rigetti's Cepheus-1-108Q quantum processor. Its pools are refilled by hand, so it is often empty between refills. Bytes come only from Rigetti.",
+    kind: "Superconducting QPU, refilled manually",
+    tier: "quantum_verified",
+  },
+  // --- Coming soon -----------------------------------------------------------
+  {
+    id: "iqm_resonance_001",
+    name: "IQM Resonance",
+    description: "Cloud superconducting quantum processor measurement noise.",
+    kind: "Superconducting QPU",
+    tier: "highest_quality",
+    comingSoon: true,
+  },
+  ...(
+    [
+      ["ibm_boston_001", "IBM Boston"],
+      ["ibm_fez_001", "IBM Fez"],
+      ["ibm_kingston_001", "IBM Kingston"],
+      ["ibm_marrakesh_001", "IBM Marrakesh"],
+      ["ibm_miami_001", "IBM Miami"],
+      ["ibm_pittsburgh_001", "IBM Pittsburgh"],
+    ] as const
+  ).map(([id, name]): SiteSource => ({
+    id,
+    name,
+    description: "IBM Quantum superconducting processor measurement noise.",
+    kind: "Superconducting QPU (IBM Quantum)",
+    tier: "highest_quality",
+    comingSoon: true,
+  })),
+  {
+    id: "rdseed_local_001",
+    name: "RDSEED",
+    description: "CPU hardware random number generator (Intel RDSEED).",
+    kind: "CPU hardware entropy",
+    tier: "fastest",
+    comingSoon: true,
+  },
+];
+
+/** Never shown anywhere: public beacons, simulators, stand-ins, host RNG twins, expansion lanes. */
+export function isHiddenSource(id: string): boolean {
+  return (
+    id === "nist_beacon_001" ||
+    id === "inmetro_beacon_001" ||
+    id.startsWith("curby_") ||
+    id === "sim_dev_001" ||
+    id === "lightrider_qec_sim_001" ||
+    id === "ql_lab_001" ||
+    id.startsWith("hwrng_") ||
+    id === "qispace_qpp_001"
+  );
+}
+
+export function siteSource(id: string): SiteSource | undefined {
+  return SITE_SOURCES.find((s) => s.id === id);
+}
+
+export function isComingSoon(id: string): boolean {
+  return siteSource(id)?.comingSoon === true;
+}
+
+/** Listed, not coming soon, not hidden. Still needs its own ring to be shown. */
+export function isOfferedSource(id: string): boolean {
+  const s = siteSource(id);
+  return !!s && !s.comingSoon && !isHiddenSource(id);
+}
+
+export const COMING_SOON_SOURCES: SiteSource[] = SITE_SOURCES.filter((s) => s.comingSoon);
+
 export interface SingleSourceOption {
   id: string;
   name: string;
   description: string;
 }
 
-// Pilot: ANU only. Must stay a subset of SINGLE_SOURCES in ems-egress.
-export const SINGLE_SOURCE_OPTIONS: SingleSourceOption[] = [
-  {
-    id: "anu_aws_001",
-    name: "ANU Quantum RNG",
-    description: "Quantum vacuum fluctuations from the Australian National University. Bytes come only from ANU.",
-  },
-  {
-    id: "cisco_qrng_001",
-    name: "Cisco Outshift QRNG",
-    description: "Quantum-generated random numbers from Cisco's cloud quantum service. Bytes come only from Cisco.",
-  },
-  {
-    id: "lightrider_qec_001",
-    name: "Light Rider QEC (IQM)",
-    description: "Quantum error-corrected entropy from real IQM Garnet hardware. Bytes come only from QEC circuits.",
-  },
-  {
-    id: "qispace_kds_001",
-    name: "QiSpace TQRND",
-    description: "True quantum random numbers from QiSpace enterprise node. Bytes come only from QiSpace.",
-  },
-];
+// Offered for single-source draws (the route's allowlist too). Must stay a
+// subset of SINGLE_SOURCES in ems-egress (config.rs).
+export const SINGLE_SOURCE_OPTIONS: SingleSourceOption[] = SITE_SOURCES.filter((s) => isOfferedSource(s.id));
 
 // Custom pool size limits (EMS multi.rs MAX_SOURCES, and its 2-source floor).
 export const MIN_CUSTOM_SOURCES = 2;
 export const MAX_CUSTOM_SOURCES = 8;
 
-// Display names for source ids that can appear on a receipt.
+// Display names for source ids that can appear on a receipt (receipts can
+// name any contributing source, hidden ones included). Falls back to SITE_SOURCES.
 const SOURCE_NAMES: Record<string, string> = {
   anu_aws_001: "ANU Quantum RNG",
   qispace_kds_001: "QiSpace TQRND",
   lightrider_qec_001: "Light Rider QEC (IQM)",
   iqm_resonance_001: "IQM Resonance",
-  ibm_kingston_001: "IBM Kingston",
   rigetti_cepheus_001: "Rigetti Cepheus-1-108Q",
   cisco_qrng_001: "Cisco Outshift QRNG",
   curby_q_jila_001: "CURBy-Q beacon",
@@ -95,7 +206,7 @@ const SOURCE_NAMES: Record<string, string> = {
 };
 
 export function sourceDisplayName(id: string): string {
-  return SOURCE_NAMES[id] ?? id;
+  return SOURCE_NAMES[id] ?? siteSource(id)?.name ?? id;
 }
 
 /** What kind of draw a receipt describes, from its own `policy` field. */
@@ -140,4 +251,17 @@ export interface MultiSourceStatus {
 export interface EntropyCatalog {
   sources: SourceStatus[];
   multiSources: MultiSourceStatus[];
+}
+
+/**
+ * A source's own ring, from the egress catalogs: "ready" / "empty", or null
+ * when it has no ring of its own (not Available). The single-source catalog
+ * is authoritative; the custom-pool list covers sources not in it.
+ */
+export function ownRingState(id: string, catalog: EntropyCatalog): "ready" | "empty" | null {
+  const single = catalog.sources.find((s) => s.source_id === id);
+  if (single && single.state !== "unavailable") return single.state;
+  const multi = catalog.multiSources.find((s) => s.source_id === id);
+  if (multi?.bytes_from === "own_ring") return (multi.bytes_available ?? 0) > 0 ? "ready" : "empty";
+  return null;
 }

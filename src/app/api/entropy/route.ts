@@ -3,6 +3,7 @@ import { after, NextRequest, NextResponse } from "next/server";
 import {
   MAX_CUSTOM_SOURCES,
   MIN_CUSTOM_SOURCES,
+  isOfferedSource,
   POOL_OPTIONS,
   SINGLE_SOURCE_OPTIONS,
 } from "@/lib/entropy/modes";
@@ -72,6 +73,8 @@ async function customCall(
     return { error: "Could not check source status with EMS.", status: 502 };
   }
   for (const id of ids) {
+    // Same rule as the picker: hidden and coming-soon sources are never drawn.
+    if (!isOfferedSource(id)) return { error: `Source '${id}' cannot be used in a custom pool.`, status: 400 };
     const entry = catalog.find((s) => s.source_id === id);
     if (!entry) return { error: `Source '${id}' cannot be used in a custom pool.`, status: 400 };
     if (!entry.selectable) {

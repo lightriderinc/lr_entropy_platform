@@ -1,6 +1,9 @@
 "use client";
 
+import ComingSoonTag from "@/components/ui/ComingSoonTag";
 import {
+  COMING_SOON_SOURCES,
+  isOfferedSource,
   MAX_CUSTOM_SOURCES,
   MIN_CUSTOM_SOURCES,
   sourceDisplayName,
@@ -18,10 +21,11 @@ function ringLabel(s: MultiSourceStatus): string {
 }
 
 /**
- * Pick 2-8 sources for a custom pool. The list (live status, and where each
- * source's bytes come from) is EMS /v1/entropy/multi/sources; beacons and
- * simulators never appear. Only selectable rows can be ticked; the rest are
- * greyed out with the reason. /api/entropy re-checks the picks against a
+ * Pick 2-8 sources for a custom pool. Available rows are the sources in
+ * SITE_SOURCES (modes.ts) that EMS /v1/entropy/multi/sources reports with
+ * their own ring; only selectable ones can be ticked, the rest are greyed
+ * out with EMS's reason (e.g. an empty pool). Coming-soon sources follow,
+ * greyed out and tagged. Hidden sources never appear. /api/entropy re-checks the picks against a
  * fresh list before drawing, so a stale page cannot slip one through.
  */
 export default function CustomSourcePicker({
@@ -34,12 +38,13 @@ export default function CustomSourcePicker({
   onToggle: (id: string) => void;
 }) {
   const { multiSources } = use(catalogPromise);
+  const available = multiSources.filter((s) => isOfferedSource(s.source_id) && s.bytes_from === "own_ring");
   if (multiSources.length === 0) {
     return <p className="text-xs text-[var(--brand-primary)]">Could not load sources from EMS.</p>;
   }
   const full = picked.length >= MAX_CUSTOM_SOURCES;
   // Selectable first, then the rest, each alphabetical by display name.
-  const ordered = [...multiSources].sort(
+  const ordered = [...available].sort(
     (a, b) =>
       Number(b.selectable) - Number(a.selectable) ||
       sourceDisplayName(a.source_id).localeCompare(sourceDisplayName(b.source_id)),
@@ -96,6 +101,25 @@ export default function CustomSourcePicker({
             </li>
           );
         })}
+        {COMING_SOON_SOURCES.map((s) => (
+          <li key={s.id}>
+            <div
+              aria-disabled="true"
+              className="flex w-full items-start gap-2 default-radius border border-gray-100 bg-gray-50 p-3 cursor-not-allowed"
+            >
+              <span className="mt-0.5 text-lg text-gray-300">
+                <MdCheckBoxOutlineBlank />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-gray-500 leading-tight">
+                  {s.name}{" "}
+                  <span className="font-mono text-[11px] font-normal text-gray-400">{s.id}</span>
+                </span>
+              </span>
+              <ComingSoonTag />
+            </div>
+          </li>
+        ))}
       </ul>
     </div>
   );

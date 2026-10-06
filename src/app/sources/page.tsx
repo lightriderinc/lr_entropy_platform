@@ -1,11 +1,10 @@
 import SourceCatalog from "@/components/sources/SourceCatalog";
 import StatCard from "@/components/StatCard";
-import { getSources } from "@/lib/sources/ems";
+import { getSourceDirectory } from "@/lib/sources/directory";
 import { TbDatabaseExport } from "react-icons/tb";
 
 export default async function SourcesPage() {
-  const sources = await getSources();
-  const onlineCount = sources.filter((s) => s.online).length;
+  const sources = await getSourceDirectory();
 
   return (
     <div>
@@ -19,7 +18,6 @@ export default async function SourcesPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 mb-8">
-        {/* <StatCard label="Sources online" value={`${onlineCount} / ${sources.length}`} icon={<MdGrade />} /> */}
         <StatCard label="Extraction method" value="SHAKE-256" sub="HMAC-DRBG-SHA-512" small icon={<TbDatabaseExport />} />
       </div>
 

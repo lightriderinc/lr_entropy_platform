@@ -1,6 +1,11 @@
 "use client";
 
-import { SINGLE_SOURCE_OPTIONS, type EntropyCatalog, type SourceStatus } from "@/lib/entropy/modes";
+import {
+  COMING_SOON_SOURCES,
+  SINGLE_SOURCE_OPTIONS,
+  type EntropyCatalog,
+  type SourceStatus,
+} from "@/lib/entropy/modes";
 import { use } from "react";
 import { MdBlurOn } from "react-icons/md";
 import EntropySourceCard from "./EntropySourceCard";
@@ -28,30 +33,44 @@ export default function SingleSourceSelector({
   onSelect: (id: string) => void;
 }) {
   const catalog = use(catalogPromise);
-  // Only sources with their OWN pool can be served alone. EMS reports a
-  // source with no own ring as `unavailable`; it is not offered at all
+  // Available: only sources with their OWN pool can be served alone. EMS
+  // reports a source with no own ring as `unavailable`; it is not offered
   // (an empty own pool is still listed, with its refill-pending badge).
   const offered = SINGLE_SOURCE_OPTIONS.flatMap((source) => {
     const status = catalog.sources.find((s) => s.source_id === source.id);
     return status && status.state !== "unavailable" ? [{ source, status }] : [];
   });
-  if (offered.length === 0) {
-    return <p className="text-xs text-gray-500">No single sources are available right now.</p>;
-  }
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {offered.map(({ source, status }) => (
-        <EntropySourceCard
-          key={source.id}
-          id={source.id}
-          name={source.name}
-          description={source.description}
-          icon={<MdBlurOn />}
-          selected={selectedId === source.id}
-          badge={<SourceStateBadge status={status} />}
-          onSelect={() => onSelect(source.id)}
-        />
-      ))}
+    <div className="flex flex-col gap-2">
+      {offered.length === 0 && (
+        <p className="text-xs text-gray-500">No single sources are available right now.</p>
+      )}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {offered.map(({ source, status }) => (
+          <EntropySourceCard
+            key={source.id}
+            id={source.id}
+            name={source.name}
+            description={source.description}
+            icon={<MdBlurOn />}
+            selected={selectedId === source.id}
+            badge={<SourceStateBadge status={status} />}
+            onSelect={() => onSelect(source.id)}
+          />
+        ))}
+        {COMING_SOON_SOURCES.map((source) => (
+          <EntropySourceCard
+            key={source.id}
+            id={source.id}
+            name={source.name}
+            description={source.description}
+            icon={<MdBlurOn />}
+            selected={false}
+            disabled
+            onSelect={() => {}}
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import {
   createEmptyFilters,
   filterSources,
-  type Source,
+  type DirectorySource,
   type SourceFilterState,
 } from "@/lib/sources/filters";
 import { useEffect, useState } from "react";
@@ -27,7 +27,7 @@ function isView(value: string | null): value is View {
   return value === "cards" || value === "list";
 }
 
-export default function SourceCatalog({ sources }: { sources: Source[] }) {
+export default function SourceCatalog({ sources }: { sources: DirectorySource[] }) {
   const [view, setView] = useState<View>("cards");
   const [filters, setFilters] = useState<SourceFilterState>(createEmptyFilters);
 
@@ -61,13 +61,14 @@ export default function SourceCatalog({ sources }: { sources: Source[] }) {
   }
 
   const filteredSources = filterSources(sources, filters);
-  const onlineCount = filteredSources.filter((s) => s.online).length;
+  const availableCount = filteredSources.filter((s) => s.availability === "available").length;
+  const comingSoonCount = filteredSources.length - availableCount;
 
   return (
     <>
       <div className="mb-6 flex items-center justify-between">
         <span className="text-md text-gray-950">
-          {filteredSources.length} Sources, {onlineCount} Online
+          {availableCount} Available{comingSoonCount > 0 && `, ${comingSoonCount} Coming soon`}
         </span>
 
         <div className="flex items-center gap-3">
