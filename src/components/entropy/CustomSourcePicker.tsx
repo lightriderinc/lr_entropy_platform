@@ -1,9 +1,11 @@
 "use client";
 
 import ComingSoonTag from "@/components/ui/ComingSoonTag";
+import { SourceTypeTag } from "./EntropySourceCard";
 import {
   COMING_SOON_SOURCES,
   isOfferedSource,
+  siteSource,
   MAX_CUSTOM_SOURCES,
   MIN_CUSTOM_SOURCES,
   sourceDisplayName,
@@ -13,11 +15,9 @@ import {
 import { use } from "react";
 import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
 
-/** Where a custom draw would read this source's share from. */
-function ringLabel(s: MultiSourceStatus): string {
-  if (s.bytes_from !== "own_ring") return `shared tier pool (${s.ring})`;
-  const onHand = typeof s.bytes_available === "number" ? ` · ${s.bytes_available} B on hand` : "";
-  return `own pool (${s.ring})${onHand}`;
+/** How much the source has right now (its own pool). */
+function balanceLabel(s: MultiSourceStatus): string {
+  return typeof s.bytes_available === "number" ? `${s.bytes_available.toLocaleString()} B available` : "";
 }
 
 /**
@@ -53,7 +53,7 @@ export default function CustomSourcePicker({
     <div>
       <p className="mb-2 text-xs text-gray-500">
         {picked.length} of {MIN_CUSTOM_SOURCES}–{MAX_CUSTOM_SOURCES} selected. Only these sources
-        are blended (cascade extractor).
+        are blended.
       </p>
       <ul className="flex flex-col gap-1.5">
         {ordered.map((s) => {
@@ -80,12 +80,11 @@ export default function CustomSourcePicker({
                 <span className={["mt-0.5 text-lg", isPicked ? "text-[var(--brand-primary)]" : "text-gray-400"].join(" ")}>
                   {isPicked ? <MdCheckBox /> : <MdCheckBoxOutlineBlank />}
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-gray-800 leading-tight">
-                    {sourceDisplayName(s.source_id)}{" "}
-                    <span className="font-mono text-[11px] font-normal text-gray-400">{s.source_id}</span>
+                    {sourceDisplayName(s.source_id)}
                   </span>
-                  <span className="mt-0.5 block text-xs text-gray-500">Bytes from: {ringLabel(s)}</span>
+                  {balanceLabel(s) && <span className="mt-0.5 block text-xs text-gray-500">{balanceLabel(s)}</span>}
                   {s.reason && (
                     <span
                       className={[
@@ -97,6 +96,7 @@ export default function CustomSourcePicker({
                     </span>
                   )}
                 </span>
+                {siteSource(s.source_id) && <SourceTypeTag tag={siteSource(s.source_id)!.tag} />}
               </button>
             </li>
           );
@@ -111,10 +111,7 @@ export default function CustomSourcePicker({
                 <MdCheckBoxOutlineBlank />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-gray-500 leading-tight">
-                  {s.name}{" "}
-                  <span className="font-mono text-[11px] font-normal text-gray-400">{s.id}</span>
-                </span>
+                <span className="block text-sm font-semibold text-gray-500 leading-tight">{s.name}</span>
               </span>
               <ComingSoonTag />
             </div>
