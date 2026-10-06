@@ -13,35 +13,16 @@ import { MdBlurOn } from "react-icons/md";
 import EntropySourceCard from "./EntropySourceCard";
 import QecPanel from "./QecPanel";
 
-/** Live state of a source's own pool, from EMS /v1/entropy/sources. */
-function SourceStateBadge({ status }: { status: SourceStatus }) {
+/** What the user needs: how much the source has right now. */
+function BalanceBadge({ status }: { status: SourceStatus | undefined }) {
   const [text, cls] =
-    status.state === "ready"
-      ? [`Ready · up to ${status.max_draw_bytes} B now`, "bg-green-50 text-green-700"]
+    status?.state === "ready"
+      ? [`${status.max_draw_bytes.toLocaleString()} B available`, "bg-green-50 text-green-700"]
       : ["Out of entropy — refill pending", "bg-amber-50 text-amber-700"];
   return (
     <span className={`inline-block default-radius px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>
       {text}
     </span>
-  );
-}
-
-/** "Drawing from: <name> (<id>) · <state>" under the QEC toggle. */
-function DrawingFrom({ id, status, qec }: { id: string; status: SourceStatus | undefined; qec: boolean }) {
-  const state =
-    status?.state === "ready"
-      ? `up to ${status.max_draw_bytes} B now`
-      : status?.state === "empty"
-        ? "out of entropy, refill pending"
-        : "not available";
-  return (
-    <>
-      Drawing from <span className="font-semibold">{sourceDisplayName(id)}</span>{" "}
-      <span className="font-mono text-[11px] text-gray-400">{id}</span>
-      {qec ? ": IQM hardware through the Light Rider SDK, with QEC" : ": raw IQM measurements, no QEC"}
-      {" · "}
-      {state}
-    </>
   );
 }
 
@@ -51,6 +32,8 @@ export default function SingleSourceSelector({
   onSelect,
   qec,
   onQecChange,
+  qecMode,
+  onQecModeChange,
 }: {
   catalogPromise: Promise<EntropyCatalog>;
   /** The card picked (the parent id when a QEC variant is in use). */
@@ -58,6 +41,8 @@ export default function SingleSourceSelector({
   onSelect: (id: string) => void;
   qec: boolean;
   onQecChange: (qec: boolean) => void;
+  qecMode: number;
+  onQecModeChange: (mode: number) => void;
 }) {
   const catalog = use(catalogPromise);
   const statusOf = (id: string) => {
@@ -83,6 +68,7 @@ export default function SingleSourceSelector({
   const variantId = selectedId ? QEC_VARIANT[selectedId] : undefined;
   const showQec = !!selectedId && !!variantId && offeredIds.has(selectedId);
   const variantStatus = variantId ? statusOf(variantId) : undefined;
+  const usedId = qec && variantId ? variantId : selectedId;
 
   return (
     <div className="flex flex-col gap-2">
@@ -95,10 +81,10 @@ export default function SingleSourceSelector({
             key={source.id}
             id={source.id}
             name={source.name}
-            description={source.description}
+            tag={source.tag}
             icon={<MdBlurOn />}
             selected={selectedId === source.id}
-            badge={<SourceStateBadge status={status} />}
+            badge={<BalanceBadge status={status} />}
             onSelect={() => onSelect(source.id)}
           />
         ))}
@@ -107,7 +93,6 @@ export default function SingleSourceSelector({
             key={source.id}
             id={source.id}
             name={source.name}
-            description={source.description}
             icon={<MdBlurOn />}
             selected={false}
             disabled
@@ -115,18 +100,20 @@ export default function SingleSourceSelector({
           />
         ))}
       </div>
-      {showQec && (
+      {showQec && usedId && (
         <QecPanel
           enabled={qec}
           onToggle={onQecChange}
           // Can't switch QEC on while its pool is unavailable; can always switch off.
           toggleDisabled={!qec && !variantStatus}
+          mode={qecMode}
+          onModeChange={onQecModeChange}
           note={
-            qec ? (
-              <DrawingFrom id={variantId} status={variantStatus} qec />
-            ) : (
-              <DrawingFrom id={selectedId} status={statusOf(selectedId)} qec={false} />
-            )
+            <>
+              Using <span className="font-semibold">{sourceDisplayName(usedId)}</span>
+              {" · "}
+              <BalanceBadge status={statusOf(usedId)} />
+            </>
           }
         />
       )}

@@ -14,7 +14,7 @@ import {
 } from "@/lib/entropy/modes";
 import type { Source } from "@/lib/sources/filters";
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useWallet } from "@/lib/billing/walletStore";
 import { formatTokens, tokensFor } from "@/lib/entropy/pricing";
 import { MdArrowForward } from "react-icons/md";
@@ -35,6 +35,15 @@ export interface CreditsNotice {
   locked: boolean;
   message: string;
   buyUrl: string;
+}
+
+// sessionStorage-backed so the chosen tab survives navigating away and back
+// within the tab (same pattern as the Sources page view toggle).
+const MODE_KEY = "lr:entropy:mode";
+const MODES: EntropyMode[] = ["pool", "custom", "source", "card"];
+
+function isMode(value: string | null): value is EntropyMode {
+  return MODES.includes(value as EntropyMode);
 }
 
 /** `mode` omitted = the source cards, as before modes existed. */
@@ -61,6 +70,16 @@ export default function EntropyInput({
   onGenerate: (request: EntropyGenerateRequest) => void;
 }) {
   const [mode, setMode] = useState<EntropyMode>("pool");
+  // Restore after mount, not in the initializer, so the server-rendered
+  // markup and first client render still match.
+  useEffect(() => {
+    let stored: string | null = null;
+    try {
+      stored = sessionStorage.getItem(MODE_KEY);
+    } catch {}
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isMode(stored)) setMode(stored);
+  }, []);
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
   const [selectedSingleId, setSelectedSingleId] = useState<string | null>(null);
   // Single source "QEC error correction" toggle (IQM card): picks a real,
@@ -115,6 +134,9 @@ export default function EntropyInput({
 
   function handleModeChange(next: EntropyMode) {
     setMode(next);
+    try {
+      sessionStorage.setItem(MODE_KEY, next);
+    } catch {}
     onModeChange();
   }
 
@@ -187,6 +209,8 @@ export default function EntropyInput({
             onSelect={setSelectedSingleId}
             qec={singleQec}
             onQecChange={setSingleQec}
+            qecMode={qecMode}
+            onQecModeChange={setQecMode}
           />
         </Suspense>
       )}

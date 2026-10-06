@@ -57,11 +57,14 @@ export type TierId = "highest_quality" | "quantum_verified" | "fastest";
  * Anything else (not listed, or listed but with no own ring yet) is not
  * shown either.
  */
+/** Short tag shown on a source's card. */
+export type SourceTag = "QPU" | "QRNG" | "Beacon" | "Hardware RNG";
+
 export interface SiteSource {
   id: string;
   name: string;
-  description: string;
-  /** One-line kind for the Sources page. */
+  tag: SourceTag;
+  /** One-line kind for the Sources page. User-facing: no internals. */
   kind: string;
   /** Tier pool this source's surplus feeds. */
   tier: TierId;
@@ -69,49 +72,12 @@ export interface SiteSource {
 }
 
 export const SITE_SOURCES: SiteSource[] = [
-  {
-    id: "anu_aws_001",
-    name: "ANU Quantum RNG",
-    description: "Quantum vacuum fluctuations from the Australian National University. Bytes come only from ANU.",
-    kind: "Quantum optical source (photon vacuum)",
-    tier: "highest_quality",
-  },
-  {
-    id: "cisco_qrng_001",
-    name: "Cisco Outshift QRNG",
-    description: "Quantum-generated random numbers from Cisco's cloud quantum service. Bytes come only from Cisco.",
-    kind: "Cloud quantum random number generator",
-    tier: "highest_quality",
-  },
-  {
-    id: "lightrider_qec_001",
-    name: "Light Rider QEC (IQM)",
-    description: "Quantum error-corrected entropy from real IQM Garnet hardware. Bytes come only from QEC circuits.",
-    kind: "Error-corrected circuits on IQM superconducting QPU",
-    tier: "highest_quality",
-  },
-  {
-    id: "qispace_kds_001",
-    name: "QiSpace TQRND",
-    description: "True quantum random numbers from QiSpace enterprise node. Bytes come only from QiSpace.",
-    kind: "Enterprise quantum random number node",
-    tier: "highest_quality",
-  },
-  {
-    id: "rigetti_cepheus_001",
-    name: "Rigetti Cepheus-1-108Q (QPU, refilled manually)",
-    description:
-      "Measurement entropy from Rigetti's Cepheus-1-108Q quantum processor. Its pools are refilled by hand, so it is often empty between refills. Bytes come only from Rigetti.",
-    kind: "Superconducting QPU, refilled manually",
-    tier: "quantum_verified",
-  },
-  {
-    id: "iqm_resonance_001",
-    name: "IQM Resonance",
-    description: "Raw measurement noise from IQM's cloud superconducting quantum processor. Bytes come only from IQM.",
-    kind: "Superconducting QPU",
-    tier: "highest_quality",
-  },
+  { id: "anu_aws_001", name: "ANU Quantum RNG", tag: "QRNG", kind: "Quantum optical source (photon vacuum)", tier: "highest_quality" },
+  { id: "cisco_qrng_001", name: "Cisco Outshift QRNG", tag: "QRNG", kind: "Cloud quantum random number generator", tier: "highest_quality" },
+  { id: "lightrider_qec_001", name: "Light Rider QEC (IQM)", tag: "QPU", kind: "Error-corrected quantum processor", tier: "highest_quality" },
+  { id: "qispace_kds_001", name: "QiSpace TQRND", tag: "QRNG", kind: "Quantum random number generator", tier: "highest_quality" },
+  { id: "rigetti_cepheus_001", name: "Rigetti Cepheus-1-108Q", tag: "QPU", kind: "Superconducting quantum processor", tier: "quantum_verified" },
+  { id: "iqm_resonance_001", name: "IQM Resonance", tag: "QPU", kind: "Superconducting quantum processor", tier: "highest_quality" },
   // --- Coming soon -----------------------------------------------------------
   ...(
     [
@@ -125,19 +91,12 @@ export const SITE_SOURCES: SiteSource[] = [
   ).map(([id, name]): SiteSource => ({
     id,
     name,
-    description: "IBM Quantum superconducting processor measurement noise.",
-    kind: "Superconducting QPU (IBM Quantum)",
+    tag: "QPU",
+    kind: "Superconducting quantum processor",
     tier: "highest_quality",
     comingSoon: true,
   })),
-  {
-    id: "rdseed_local_001",
-    name: "RDSEED",
-    description: "CPU hardware random number generator (Intel RDSEED).",
-    kind: "CPU hardware entropy",
-    tier: "fastest",
-    comingSoon: true,
-  },
+  { id: "rdseed_local_001", name: "RDSEED", tag: "Hardware RNG", kind: "CPU hardware entropy", tier: "fastest", comingSoon: true },
 ];
 
 /** Never shown anywhere: public beacons, simulators, stand-ins, host RNG twins, expansion lanes. */
@@ -185,11 +144,7 @@ export function singleSourceDrawId(cardId: string, qec: boolean): string {
   return qec && QEC_VARIANT[cardId] ? QEC_VARIANT[cardId] : cardId;
 }
 
-export interface SingleSourceOption {
-  id: string;
-  name: string;
-  description: string;
-}
+export type SingleSourceOption = Pick<SiteSource, "id" | "name" | "tag">;
 
 // Offered for single-source draws (the route's allowlist too). Must stay a
 // subset of SINGLE_SOURCES in ems-egress (config.rs).
