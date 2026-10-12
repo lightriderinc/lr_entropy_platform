@@ -43,6 +43,12 @@ model Draw {
   updatedAt       DateTime  @updatedAt @map("updated_at")
   deliveredAt     DateTime? @map("delivered_at")
   settledAt       DateTime? @map("settled_at")
+  /// "web" (a click on the site) or "api" (an API key).
+  channel         String    @default("web")
+  /// The Light Rider API key's prefix for "api" draws. The key itself lives
+  /// in cloud (one per customer); a prefix, not a link, since revoking a key
+  /// deletes it there.
+  apiKeyPrefix    String?   @map("api_key_prefix")
 
   receipt Receipt?
 
@@ -54,27 +60,27 @@ model Draw {
 /// The EMS-signed receipt of a delivered draw, kept verbatim forever.
 model Receipt {
   /// EMS request_id (the receipt's own id).
-  requestId          String   @id @map("request_id")
-  drawId             String   @unique @map("draw_id") @db.Uuid
-  draw               Draw     @relation(fields: [drawId], references: [drawId])
-  logtoUserId        String   @map("logto_user_id")
+  requestId             String   @id @map("request_id")
+  drawId                String   @unique @map("draw_id") @db.Uuid
+  draw                  Draw     @relation(fields: [drawId], references: [drawId])
+  logtoUserId           String   @map("logto_user_id")
   /// The receipt exactly as the egress returned it. This text is what was
   /// signed (minus its own signature field); it is served and downloaded
   /// byte-for-byte and never re-serialised.
-  signedJson         String   @map("signed_json")
+  signedJson            String   @map("signed_json")
   // Copies of a few receipt fields, for filtering and the list view only.
-  mode               String
-  policy             String
-  poolId             String   @map("pool_id")
-  contributingSources String[] @map("contributing_sources")
-  outputBytes        Int      @map("output_bytes")
-  signatureAlg       String   @map("signature_alg")
+  mode                  String
+  policy                String
+  poolId                String   @map("pool_id")
+  contributingSources   String[] @map("contributing_sources")
+  outputBytes           Int      @map("output_bytes")
+  signatureAlg          String   @map("signature_alg")
   /// u64 nanoseconds; exceeds JS safe integers, so it is kept as BigInt.
-  timestampUnixNs    BigInt   @map("timestamp_unix_ns")
+  timestampUnixNs       BigInt   @map("timestamp_unix_ns")
   /// sha256(public key bytes) of the EMS key this receipt verified against.
-  signingKeyFingerprint String? @map("signing_key_fingerprint")
-  verifiedAtSave     Boolean  @map("verified_at_save")
-  createdAt          DateTime @default(now()) @map("created_at")
+  signingKeyFingerprint String?  @map("signing_key_fingerprint")
+  verifiedAtSave        Boolean  @map("verified_at_save")
+  createdAt             DateTime @default(now()) @map("created_at")
 
   @@index([logtoUserId, createdAt(sort: Desc)])
   @@index([logtoUserId, mode, createdAt(sort: Desc)])

@@ -16,6 +16,11 @@ import { BillingUnavailableError, ReauthRequiredError } from "./errors";
 //     (`sub`) from it, so the wallet is resolved from a token Logto signed,
 //     never from anything we assert.
 //
+// Developer-API draws have no user token. They forward the developer's own
+// Light Rider API key (cloud's ApiKey, one per customer) as X-LR-Api-Key
+// instead, and cloud resolves the wallet from that key. See apiKeyBilling()
+// and resolveApiKey() below, and cloud's lib/billing/entropyInternal.ts.
+//
 // Environments never cross: CLOUD_BILLING_URL points at cloud prod from
 // entropy prod, and at cloud preview/dev from entropy preview/dev.
 
@@ -44,19 +49,36 @@ export { BillingUnavailableError, ReauthRequiredError };
 
 export type BillingResponse<T> = { status: number; data: T };
 
-async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<BillingResponse<T>> {
+/** Whose wallet a call acts on: the signed-in user (their token) or the owner of an API key. */
+type Caller = { kind: "user" } | { kind: "apiKey"; key: string };
+
+async function call<T>(
+  method: "GET" | "POST",
+  path: string,
+  body?: unknown,
+  caller: Caller = { kind: "user" },
+  /** Statuses returned to the caller instead of thrown (e.g. 401 for a bad API key). */
+  passStatuses: number[] = [],
+): Promise<BillingResponse<T>> {
   if (!isBillingConfigured()) throw new BillingUnavailableError("Billing API is not configured.");
-  let userToken: string;
-  try {
-    userToken = await getAccessToken(logtoConfig, BILLING_RESOURCE);
-  } catch (err) {
-    throw new ReauthRequiredError(`Could not get the user's billing token: ${String(err)}`);
-  }
   const headers: Record<string, string> = {
     "X-Entropy-Billing-Secret": process.env.ENTROPY_BILLING_SECRET!,
-    "X-LR-User-Authorization": `Bearer ${userToken}`,
     "Content-Type": "application/json",
   };
+  if (caller.kind === "apiKey") {
+    headers["X-LR-Api-Key"] = caller.key;
+  } else {
+    try {
+      headers["X-LR-User-Authorization"] = `Bearer ${await getAccessToken(logtoConfig, BILLING_RESOURCE)}`;
+    } catch (err) {
+      // Logged (message only, never a token) so "Please sign in again" can be
+      // traced: "Refresh token not found" means the session lost its refresh
+      // token (Logto's "Always issue Refresh Token"); invalid_grant means a
+      // revoked or reused one.
+      console.warn("[billing] could not get the user's billing token:", err instanceof Error ? err.message : String(err));
+      throw new ReauthRequiredError(`Could not get the user's billing token: ${String(err)}`);
+    }
+  }
   // Cloud preview deployments behind Vercel Deployment Protection.
   const bypass = process.env.CLOUD_VERCEL_PROTECTION_BYPASS;
   if (bypass) headers["x-vercel-protection-bypass"] = bypass;
@@ -74,7 +96,7 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
     throw new BillingUnavailableError(`Billing API unreachable: ${String(err)}`);
   }
   const data = (await res.json().catch(() => ({}))) as T;
-  if (res.status >= 500 || res.status === 401 || res.status === 403) {
+  if (!passStatuses.includes(res.status) && (res.status >= 500 || res.status === 401 || res.status === 403)) {
     throw new BillingUnavailableError(`Billing API ${path} returned ${res.status}: ${JSON.stringify(data)}`);
   }
   return { status: res.status, data };
@@ -96,8 +118,8 @@ export type WalletEntry = {
   reason: string;
   counterpartyEmail: string | null;
   createdAt: string;
-  /** Entropy draw/refund rows: what was drawn. bytes is null on rows that predate the link. */
-  entropy?: { mode: string; bytes: number | null } | null;
+  /** Entropy draw/refund rows: what was drawn. bytes/channel are null on rows that predate them. */
+  entropy?: { mode: string; bytes: number | null; channel?: string | null } | null;
 };
 export type WalletData = {
   balanceCents: number;
@@ -125,3 +147,40 @@ export const cloudBilling = {
       email,
     }),
 };
+
+export type ResolvedApiKey = { logtoUserId?: string; keyPrefix?: string; rateLimitPerMinute?: number; error?: string; retryAfterSeconds?: number };
+
+/**
+ * Who owns a developer's Light Rider API key, counting the request against the
+ * key's per-minute window (cloud does both in one statement). 200 = valid,
+ * 401 = invalid or revoked, 429 = rate limited; other failures throw.
+ */
+export function resolveApiKey(key: string) {
+  return call<ResolvedApiKey>("POST", "/api/internal/entropy/api-key/resolve", {}, { kind: "apiKey", key }, [401, 429]);
+}
+
+/**
+ * Billing for developer-API draws: the same charge / settle / refund, acting on
+ * the wallet of the API key's owner instead of a signed-in user's token.
+ */
+export function apiKeyBilling(key: string) {
+  const caller: Caller = { kind: "apiKey", key };
+  return {
+    charge: (drawId: string, mode: string, bytes: number) =>
+      call<ChargeData>("POST", "/api/internal/entropy/charge", { drawId, mode, bytes }, caller),
+    settle: (drawId: string, egressRequestId: string) =>
+      call<{ status?: string; error?: string }>(
+        "POST",
+        "/api/internal/entropy/settle",
+        { drawId, egressRequestId },
+        caller,
+      ),
+    refund: (drawId: string, reason: string) =>
+      call<{ status?: string; balanceCents?: number; error?: string }>(
+        "POST",
+        "/api/internal/entropy/refund",
+        { drawId, reason },
+        caller,
+      ),
+  };
+}

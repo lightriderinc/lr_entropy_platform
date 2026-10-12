@@ -19,6 +19,10 @@ export async function createDraw(input: {
   request: Prisma.InputJsonValue;
   bytes: number;
   costTokens: number;
+  /** "web" (a click on the site, the default) or "api" (an API key). */
+  channel?: "web" | "api";
+  /** Prefix of the Light Rider API key, for "api" draws. */
+  apiKeyPrefix?: string;
 }): Promise<void> {
   await db.draw.create({
     data: {
@@ -28,6 +32,8 @@ export async function createDraw(input: {
       request: input.request,
       bytes: input.bytes,
       costTokens: input.costTokens,
+      channel: input.channel ?? "web",
+      apiKeyPrefix: input.apiKeyPrefix ?? null,
     },
   });
 }
@@ -216,4 +222,18 @@ export async function getReceipt(userSub: string, requestId: string) {
     costTokens: r.draw.costTokens,
     createdAt: r.createdAt.toISOString(),
   };
+}
+
+/**
+ * A draw already on record, for an API retry with the same Idempotency-Key:
+ * its status and, if it was delivered, its receipt (never the bytes, which
+ * are not stored). Owner-scoped like every read here.
+ */
+export async function getDrawForReplay(userSub: string, drawId: string) {
+  const d = await db.draw.findFirst({
+    where: { drawId, logtoUserId: userSub },
+    select: { status: true, receipt: { select: { requestId: true, signedJson: true } } },
+  });
+  if (!d) return null;
+  return { status: d.status, requestId: d.receipt?.requestId ?? null, signedJson: d.receipt?.signedJson ?? null };
 }

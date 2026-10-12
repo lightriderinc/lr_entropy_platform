@@ -1,6 +1,6 @@
 import { FaDice } from "react-icons/fa6";
 import { HiMiniSquare3Stack3D } from "react-icons/hi2";
-import { MdHistory, MdReceiptLong, MdRocketLaunch } from "react-icons/md";
+import { MdCode, MdHistory, MdReceiptLong, MdRocketLaunch } from "react-icons/md";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
 
@@ -49,6 +49,12 @@ export default function SidebarGroupDefault({
           name="Sources"
           href="/sources"
           icon={HiMiniSquare3Stack3D}
+          onNavigate={onNavigate}
+        />
+        <SidebarNavItem
+          name="Developers"
+          href="/developers"
+          icon={MdCode}
           onNavigate={onNavigate}
         />
       </SidebarNavGroup>

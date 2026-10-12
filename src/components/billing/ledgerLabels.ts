@@ -16,11 +16,12 @@ function formatBytes(bytes: number): string {
   return `${bytes.toLocaleString()} B`;
 }
 
-/** "(single source, 256 B)", or "(single source)" for rows that predate the byte link. */
+/** "(single source, 256 B)", "(custom pool, 64 B, API)", or "(single source)" for rows that predate the byte link. */
 function entropyDetail(e: WalletEntry, prefix: string): string {
   const mode = e.entropy?.mode ?? e.reason.slice(prefix.length);
   const parts = [MODE_LABELS[mode] ?? mode];
   if (typeof e.entropy?.bytes === "number") parts.push(formatBytes(e.entropy.bytes));
+  if (e.entropy?.channel === "api") parts.push("API");
   return `(${parts.join(", ")})`;
 }
 

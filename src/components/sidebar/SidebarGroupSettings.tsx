@@ -1,5 +1,5 @@
 import { handleSignIn } from "@/app/actions/auth";
-import { MdAccountCircle, MdToll } from "react-icons/md";
+import { MdAccountCircle, MdKey, MdToll } from "react-icons/md";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
 
@@ -26,6 +26,12 @@ export default function SidebarGroupSettings({
             name="Credits"
             href="/settings/credits"
             icon={MdToll}
+            onNavigate={onNavigate}
+          />
+          <SidebarNavItem
+            name="API key"
+            href="/settings/api-keys"
+            icon={MdKey}
             onNavigate={onNavigate}
           />
         </>
