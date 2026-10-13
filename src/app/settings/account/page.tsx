@@ -1,8 +1,34 @@
 import { handleSignOut } from "@/app/actions/auth";
+import { logtoConfig } from "@/app/logto";
 import SignOut from "@/app/sign-out";
 import SignInRequired from "@/components/auth/SignInRequired";
-import InitialsAvatar from "@/components/ui/InitialsAvatar";
-import { getAccountProfile, getDisplayName, getSession } from "@/lib/auth/session";
+import ConnectedAccounts from "@/components/profile/ConnectedAccounts";
+import ProfileAvatar from "@/components/profile/ProfileAvatar";
+import { AVATAR_FORM_FIELD, resolveAvatarSources } from "@/lib/avatar";
+import {
+  getAccountProfile,
+  getDisplayName,
+  getSession,
+  requireLogtoUser,
+} from "@/lib/auth/session";
+import {
+  bindTotp,
+  deleteMfaVerification,
+  generateTotpSecret,
+  getMfaVerifications,
+  normalizeSocialIdentities,
+  sendEmailCode,
+  updateAvatar,
+  updateBirthdate,
+  updatePassword,
+  updatePrimaryEmail,
+  verifyEmailCode,
+  verifyPassword,
+} from "@/lib/logto-account";
+import { deleteAvatar, uploadAvatar } from "@/lib/supabase/avatars";
+import { getAccessToken } from "@logto/next/server-actions";
+import { refresh, revalidatePath } from "next/cache";
+import ProfileActions from "./ProfileActions";
 
 /**
  * Account page. Mirrors the cloud platform's /settings/account in structure,
@@ -11,25 +37,206 @@ import { getAccountProfile, getDisplayName, getSession } from "@/lib/auth/sessio
  * Gated inline rather than by a settings layout: these apps have other public
  * /settings routes, and a layout gate would silently lock those too.
  *
- * Display-only. Cloud's edit controls each need something this app does not
- * have: a database (avatar upload, plan badge) or Management API M2M
- * credentials (connected accounts, authoritative password status). The
- * password/email/MFA editors are portable in principle — end-user Account API
- * only — but each is a multi-step verification flow, tracked as follow-up
- * rather than half-built here.
+ * No Management API fallback (unlike Cloud): this tenant has no M2M app
+ * registered for user lookups, so `hasPassword` and `identities` come
+ * straight off the end-user Account API response.
  */
 export default async function AccountPage() {
-  const { isAuthenticated, userInfo, claims } = await getSession();
+  const { isAuthenticated, userInfo } = await getSession();
 
   if (!isAuthenticated) {
     return <SignInRequired target="your account settings" />;
   }
 
+  // Resolve the display name via the shared resolver so a brand-new user's full
+  // name shows on first sign-in (session claims lag until the first refresh; the
+  // Account API reflects it immediately). getAccountProfile is cached, so this
+  // and getDisplayName share a single Account API fetch per request.
   const name = await getDisplayName();
   const account = await getAccountProfile();
-
-  const email = userInfo?.email ?? (claims?.email as string | undefined) ?? null;
   const birthdate = account?.profile?.birthdate ?? null;
+  const hasPassword = account?.hasPassword ?? true;
+  const socialIdentities = normalizeSocialIdentities(account?.identities);
+
+  let mfaEnabled = false;
+  try {
+    const token = await getAccessToken(logtoConfig);
+    if (token) {
+      const mfaFactors = await getMfaVerifications(token);
+      mfaEnabled = mfaFactors.some((factor) => factor.type === "Totp");
+    }
+  } catch {
+    // Account API not enabled or token unavailable
+  }
+
+  const email = userInfo?.email ?? null;
+  // Shared resolver — the header's AccountBadge uses the same one, so the two
+  // can't disagree about which picture (or which generated fallback) is current.
+  const { src: customAvatarUrl, fallbackSrc: generatedAvatarUrl } =
+    resolveAvatarSources({
+      picture: userInfo?.picture,
+      name,
+      email,
+    });
+
+  async function doVerifyPassword(password: string): Promise<string> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    return verifyPassword(token, password);
+  }
+
+  async function doUpdatePassword(
+    verificationId: string,
+    newPassword: string,
+  ): Promise<void> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    await updatePassword(token, verificationId, newPassword);
+  }
+
+  async function doSendEmailCode(emailAddr: string): Promise<string> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    return sendEmailCode(token, emailAddr);
+  }
+
+  async function doVerifyEmailCode(
+    emailAddr: string,
+    code: string,
+    verificationRecordId: string,
+  ): Promise<string> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    return verifyEmailCode(token, emailAddr, code, verificationRecordId);
+  }
+
+  /**
+   * No Management API means no reliable pre-flight duplicate-email check (see
+   * Cloud's equivalent) — the Account API still enforces uniqueness when the
+   * change is finalized, so this is a no-op that lets the flow proceed
+   * straight to sending a code.
+   */
+  async function doCheckEmailAvailability(): Promise<void> {
+    "use server";
+  }
+
+  async function doUpdateEmail(
+    currentVerifId: string,
+    newVerifId: string,
+    emailAddr: string,
+  ): Promise<void> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    await updatePrimaryEmail(token, currentVerifId, newVerifId, emailAddr);
+  }
+
+  /**
+   * Saves a directly-pasted image URL onto the Logto user record. This is the
+   * "Image URL" tab of the avatar modal, and it's also the second half of the
+   * upload flow — once a cropped file lands in storage, its public URL gets
+   * written here the same way.
+   */
+  async function doUpdateAvatarUrl(avatarUrl: string): Promise<void> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    await updateAvatar(token, avatarUrl);
+    // "layout" scope, not the usual "/settings/account": the avatar also
+    // renders in the header AccountBadge, which lives in the root layout.
+    // Revalidating just this page leaves the header showing the old picture
+    // until a full reload.
+    revalidatePath("/", "layout");
+    refresh();
+  }
+
+  /**
+   * Uploads the cropped avatar to Supabase Storage, then writes the
+   * resulting public URL onto the Logto user the same way the "Image URL"
+   * tab does. requireLogtoUser()'s own error ("UNAUTHENTICATED") isn't
+   * user-facing, so it's caught and rethrown with a friendlier message here
+   * rather than changed at the shared helper.
+   */
+  async function doUploadAvatar(formData: FormData): Promise<string> {
+    "use server";
+    let sub: string;
+    try {
+      ({ sub } = await requireLogtoUser());
+    } catch {
+      throw new Error("You must be signed in to upload an avatar.");
+    }
+
+    const file = formData.get(AVATAR_FORM_FIELD);
+    if (!(file instanceof File)) {
+      throw new Error("No image was received. Try again.");
+    }
+
+    const url = await uploadAvatar(sub, file);
+    await doUpdateAvatarUrl(url); // writes to Logto + revalidates
+    return url;
+  }
+
+  /**
+   * Removes the user's avatar: best-effort delete of the stored object, then
+   * clears the avatar field on the Logto user so it falls back to the generated
+   * default. Storage cleanup failures are logged but don't block clearing the
+   * profile — a leftover object is harmless and gets overwritten on next upload.
+   */
+  async function doRemoveAvatar(): Promise<void> {
+    "use server";
+    let sub: string;
+    try {
+      ({ sub } = await requireLogtoUser());
+    } catch {
+      throw new Error("You must be signed in to remove your avatar.");
+    }
+
+    try {
+      await deleteAvatar(sub);
+    } catch (err) {
+      console.error("[account] avatar delete failed:", err);
+    }
+
+    // Logto validates `avatar` as a URL, so an empty string is rejected as an
+    // invalid body — null is what clears the field.
+    const token = await getAccessToken(logtoConfig);
+    await updateAvatar(token, null);
+    revalidatePath("/", "layout");
+    refresh();
+  }
+
+  async function doUpdateBirthdate(birthdate: string): Promise<void> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    await updateBirthdate(token, birthdate);
+    revalidatePath("/settings/account");
+    refresh();
+  }
+
+  async function doGenerateTotpSecret(): Promise<string> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    return generateTotpSecret(token);
+  }
+
+  async function doBindTotp(
+    verificationRecordId: string,
+    secret: string,
+    code: string,
+  ): Promise<void> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    await bindTotp(token, verificationRecordId, secret, code);
+    revalidatePath("/settings/account");
+  }
+
+  async function doDisableMfa(verificationRecordId: string): Promise<void> {
+    "use server";
+    const token = await getAccessToken(logtoConfig);
+    const factors = await getMfaVerifications(token);
+    for (const factor of factors) {
+      await deleteMfaVerification(token, verificationRecordId, factor.id);
+    }
+    revalidatePath("/settings/account");
+  }
 
   return (
     <div className="animate-fade-in-up">
@@ -39,7 +246,15 @@ export default async function AccountPage() {
       </p>
 
       <div className="flex items-center gap-4 mb-12">
-        <InitialsAvatar name={name || email || "Your account"} size={64} />
+        <ProfileAvatar
+          src={customAvatarUrl}
+          fallbackSrc={generatedAvatarUrl}
+          name={name || email || "Your account"}
+          size={64}
+          onUpdateAvatarUrl={doUpdateAvatarUrl}
+          onUploadAvatar={doUploadAvatar}
+          onRemoveAvatar={doRemoveAvatar}
+        />
         <div className="min-w-0">
           {name && (
             <p className="text-3xl font-semibold text-gray-800 truncate">
@@ -49,52 +264,28 @@ export default async function AccountPage() {
         </div>
       </div>
 
-      <div className="flex flex-col mb-5">
-        <div className="flex w-full mb-5">
-          <h2 className="text-xl font-bold text-gray-500">Profile</h2>
-        </div>
-
-        <div className="flex flex-col default-radius divide-y divide-gray-100 mb-8 max-w-3xl bg-gray-50 px-4 py-1">
-          <InfoRow label="Full Name" value={name} />
-          <InfoRow label="Birthdate" value={formatBirthdate(birthdate)} />
-          <InfoRow label="Email" value={email} />
-        </div>
-      </div>
+      <ProfileActions
+        name={name}
+        email={email ?? ""}
+        birthdate={birthdate}
+        mfaEnabled={mfaEnabled}
+        hasPassword={hasPassword}
+        connectedAccounts={<ConnectedAccounts identities={socialIdentities} />}
+        onVerifyPassword={doVerifyPassword}
+        onUpdatePassword={doUpdatePassword}
+        onSendEmailCode={doSendEmailCode}
+        onVerifyEmailCode={doVerifyEmailCode}
+        onCheckEmailAvailable={doCheckEmailAvailability}
+        onUpdateEmail={doUpdateEmail}
+        onUpdateBirthdate={doUpdateBirthdate}
+        onGenerateTotpSecret={doGenerateTotpSecret}
+        onBindTotp={doBindTotp}
+        onDisableMfa={doDisableMfa}
+      />
 
       <div className="mt-6">
         <SignOut onSignOut={handleSignOut} />
       </div>
     </div>
   );
-}
-
-function InfoRow({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="flex flex-row justify-between items-center">
-      <div className="flex items-center py-3 gap-6 min-w-0">
-        <dt className="text-sm font-bold text-gray-700 flex-shrink-0 w-24">
-          {label}
-        </dt>
-        <dd className="text-base text-gray-400 truncate flex-1">
-          {value || "—"}
-        </dd>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Logto stores birthdate as a plain `YYYY-MM-DD` string. Constructing the Date
- * from parts keeps it at local midnight — `new Date("1990-01-01")` parses as
- * UTC and can render as the previous day for anyone west of Greenwich.
- */
-function formatBirthdate(birthdate: string | null): string | null {
-  if (!birthdate) return null;
-  const [year, month, day] = birthdate.split("-").map(Number);
-  if (!year || !month || !day) return birthdate;
-  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 }

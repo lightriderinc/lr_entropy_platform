@@ -1,7 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { SECONDARY_SIDEBAR_ROUTES } from "./nav.config";
+
+// Route prefixes that get a secondary sidebar. Keep in sync with the branch
+// in SidebarNav.
+const SECONDARY_SIDEBAR_ROUTES = ["/settings"];
 
 export default function SidebarSecondaryGate({
   children,

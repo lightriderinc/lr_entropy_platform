@@ -1,21 +1,63 @@
+import { FaDice } from "react-icons/fa6";
+import { HiMiniSquare3Stack3D } from "react-icons/hi2";
+import { MdCode, MdHistory, MdReceiptLong, MdRocketLaunch } from "react-icons/md";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
-import { MAIN_NAV } from "./nav.config";
 
 export default function SidebarGroupDefault({
   onNavigate,
+  isAuthenticated,
 }: {
   onNavigate?: () => void;
+  isAuthenticated: boolean;
 }) {
   return (
     <>
-      {MAIN_NAV.map((group) => (
-        <SidebarNavGroup key={group.label} label={group.label}>
-          {group.items.map((item) => (
-            <SidebarNavItem key={item.href} {...item} onNavigate={onNavigate} />
-          ))}
-        </SidebarNavGroup>
-      ))}
+      <SidebarNavGroup label="Entropy">
+        <SidebarNavItem
+          name="Getting Started"
+          href="/"
+          icon={MdRocketLaunch}
+          onNavigate={onNavigate}
+        />
+        <SidebarNavItem
+          name="Get Entropy"
+          href="/entropy"
+          icon={FaDice}
+          onNavigate={onNavigate}
+        />
+        {isAuthenticated && (
+          <>
+            <SidebarNavItem
+              name="Receipts"
+              href="/receipts"
+              icon={MdReceiptLong}
+              onNavigate={onNavigate}
+            />
+            <SidebarNavItem
+              name="Session History"
+              href="/history"
+              icon={MdHistory}
+              onNavigate={onNavigate}
+            />
+          </>
+        )}
+      </SidebarNavGroup>
+
+      <SidebarNavGroup label="Explore">
+        <SidebarNavItem
+          name="Sources"
+          href="/sources"
+          icon={HiMiniSquare3Stack3D}
+          onNavigate={onNavigate}
+        />
+        <SidebarNavItem
+          name="Developers"
+          href="/developers"
+          icon={MdCode}
+          onNavigate={onNavigate}
+        />
+      </SidebarNavGroup>
     </>
   );
 }

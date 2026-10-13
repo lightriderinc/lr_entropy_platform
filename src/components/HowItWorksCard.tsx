@@ -1,0 +1,31 @@
+export default function HowItWorksCard({
+  n,
+  title,
+  desc,
+  last,
+}: {
+  n: string;
+  title: string;
+  desc: string;
+  last?:boolean;
+}) {
+  const bits = Number(n).toString(2).padStart(3, "0").split("");
+
+  return (
+    <div className="p-4 flex flex-col border border-gray-50 bg-gray-50 default-radius">
+      <div className="flex flex-row justify-between items-center mb-1">
+        <div className="flex flex-row gap-1 mb-1">
+          {bits.map((bit, i) => (
+            <span
+              key={i}
+              className={`w-2 h-2 ${bit === "1" ? "bg-brand-primary" : "bg-gray-200"}`}
+            />
+          ))}
+        </div>
+        <span className="text-sm font-semibold text-gray-200">Step {n}</span>
+      </div>
+      <h3 className="text-xl font-semibold text-gray-700 mb-2">{title}</h3>
+      <span className="text-sm text-gray-400">{desc}</span>
+    </div>
+  );
+}

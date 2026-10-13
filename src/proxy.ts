@@ -59,5 +59,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|.*\\.(?:png|jpg|jpeg|svg|ico)$).*)"],
+  // Not the developer API (/api/v1): it authenticates with API keys, never the
+  // Logto cookie, so there is no session to refresh there.
+  matcher: ["/((?!_next/static|_next/image|api/v1/|.*\\.(?:png|jpg|jpeg|svg|ico)$).*)"],
 };
