@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/billing/wallet?cursor=...
- * The signed-in user's shared Light Rider wallet (balance in tokens = credits,
+ * The signed-in user's shared Light Rider wallet (balance in credits,
  * unlock status, ledger page), proxied from the cloud billing API.
  */
 export async function GET(request: NextRequest) {

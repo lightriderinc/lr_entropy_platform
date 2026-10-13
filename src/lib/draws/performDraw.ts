@@ -16,7 +16,7 @@ import {
   saveReceiptAndDeliver,
   type DrawMode,
 } from "@/lib/draws/store";
-import { tokensFor } from "@/lib/entropy/pricing";
+import { creditsFor } from "@/lib/entropy/pricing";
 import { EMS_EGRESS, egressHeaders, fetchMultiSources } from "@/lib/sources/egress";
 
 // Server-only. One paid draw, shared by the website (/api/entropy, a signed-in
@@ -199,7 +199,7 @@ export async function performDraw(opts: {
   if (!call) return { status: 400, body: { error: "invalid_request", message: "Unknown entropy mode or id." } };
 
   const drawMode = (mode ?? "card") as DrawMode;
-  const costTokens = tokensFor(bytes);
+  const costTokens = creditsFor(bytes);
 
   // Record the draw first: no row, no charge. A draw id already on record is
   // a retry of a request that was processed - never draw again for it.

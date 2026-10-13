@@ -1,6 +1,7 @@
 import SignInRequired from "@/components/auth/SignInRequired";
 import InfoBox from "@/components/InfoBox";
 import { getSession } from "@/lib/auth/session";
+import { cloudPlatformUrl } from "@/lib/billing/cloudLinks";
 import Link from "next/link";
 import { MdOpenInNew } from "react-icons/md";
 
@@ -15,12 +16,7 @@ export default async function ApiKeyPage() {
   const { isAuthenticated } = await getSession();
   if (!isAuthenticated) return <SignInRequired target="your API key" />;
 
-  let cloudKeys: string | null = null;
-  try {
-    cloudKeys = `${new URL(process.env.CLOUD_BILLING_URL ?? "").origin}/settings/keys`;
-  } catch {
-    cloudKeys = null;
-  }
+  const cloudKeys = cloudPlatformUrl("/settings/keys");
 
   return (
     <div className="animate-fade-in-up flex max-w-3xl flex-col gap-4">
@@ -34,7 +30,7 @@ export default async function ApiKeyPage() {
       <div className="default-radius border border-gray-50 bg-gray-50 p-5 text-sm text-gray-600">
         <p>
           Your account has one Light Rider API key. Create, rotate or revoke it on Light Rider Cloud; changes apply here
-          at once. Draws made with it are charged to your Light Rider credits at the website price (1 token per 256
+          at once. Draws made with it are charged to your Light Rider credits at the website price (1 credit per 256
           bytes).
         </p>
         {cloudKeys && (

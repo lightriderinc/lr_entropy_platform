@@ -93,7 +93,7 @@ print(receipt["contributing_sources"], receipt["request_id"])`;
         </Link>
         . It is shown once; store it as a secret (for example <code className="font-mono">LR_ENTROPY_KEY</code>). Draws
         are paid from your Light Rider credits, the same as on the website:{" "}
-        <span className="font-medium">1 token per 256 bytes</span> (minimum 1), charged before the draw and refunded if
+        <span className="font-medium">1 credit per 256 bytes</span> (minimum 1), charged before the draw and refunded if
         nothing is delivered.
         <p className="mt-2 default-radius border border-amber-200 bg-amber-50 p-2 text-amber-800">
           This is your account&apos;s <span className="font-semibold">full-access</span> key: anyone holding it can also

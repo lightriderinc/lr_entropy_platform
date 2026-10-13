@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { WalletEntry } from "@/lib/billing/cloudBilling";
 import { useWallet } from "@/lib/billing/walletStore";
-import { formatTokens } from "@/lib/entropy/pricing";
+import { formatCredits } from "@/lib/entropy/pricing";
 import { ledgerLabel } from "./ledgerLabels";
 
 /** Ledger history of the shared wallet, newest first, paged by cursor. */
@@ -53,7 +53,7 @@ export default function UsageHistory() {
             <tr className="text-left text-xs text-gray-400">
               <th className="py-2 font-medium">Date</th>
               <th className="py-2 font-medium">Activity</th>
-              <th className="py-2 text-right font-medium">Tokens</th>
+              <th className="py-2 text-right font-medium">Credits</th>
             </tr>
           </thead>
           <tbody>
@@ -68,7 +68,7 @@ export default function UsageHistory() {
                   ].join(" ")}
                 >
                   {e.amountCents > 0 ? "+" : "−"}
-                  {formatTokens(Math.abs(e.amountCents))}
+                  {formatCredits(Math.abs(e.amountCents))}
                 </td>
               </tr>
             ))}

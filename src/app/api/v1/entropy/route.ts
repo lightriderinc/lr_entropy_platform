@@ -23,7 +23,7 @@ const API_MODES: ReadonlySet<string> = new Set(["source", "custom"]);
  *
  * 200 { request_id, bytes, bytes_hex, billing: { cost_tokens, balance_tokens }, receipt }
  * The receipt is the EMS-signed JSON exactly as stored (verify it with
- * GET /api/v1/public-key). Same flow and price as the website: 1 token per
+ * GET /api/v1/public-key). Same flow and price as the website: 1 credit per
  * 256 bytes, charged before the draw, refunded if nothing is delivered.
  * Strict: a source that can't serve returns 503 (source_empty /
  * source_unavailable). Nothing is ever substituted.
