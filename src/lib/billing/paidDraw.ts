@@ -1,4 +1,4 @@
-import { formatTokens } from "@/lib/entropy/pricing";
+import { formatCredits } from "@/lib/entropy/pricing";
 import type { BillingResponse, ChargeData } from "./cloudBilling";
 import { BillingUnavailableError, ReauthRequiredError } from "./errors";
 
@@ -19,7 +19,7 @@ import { BillingUnavailableError, ReauthRequiredError } from "./errors";
 // bytes without a stored receipt, and one charge can never deliver twice (a
 // replayed draw id is refused before drawing).
 
-export const BUY_URL = "/settings/credits";
+export const BUY_URL = "/settings/manage-credits/purchase";
 
 export type DrawOutcome = {
   /** Egress HTTP response, or null when it was never reached. */
@@ -84,7 +84,7 @@ export async function runPaidDraw(deps: PaidDrawDeps): Promise<PaidDrawResult> {
           error: locked ? "credits_locked" : "insufficient_credits",
           message: locked
             ? "Free signup credits can't be spent on entropy. Buy credits to unlock your balance."
-            : `Not enough credits: this draw costs ${formatTokens(costTokens)}, your balance is ${formatTokens(c.balanceCents)}.`,
+            : `Not enough credits: this draw costs ${formatCredits(costTokens)}, your balance is ${formatCredits(c.balanceCents)}.`,
           costTokens,
           balanceTokens: c.balanceCents,
           buyUrl: BUY_URL,

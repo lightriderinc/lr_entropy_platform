@@ -109,7 +109,7 @@ export function drawIdFor(userSub: string, idempotencyKey: string | null): strin
 /** Absolute "buy credits" link for 402 answers. */
 export function buyUrl(): string {
   const base = (process.env.NEXT_BASE_URL || "").replace(/\/$/, "");
-  return `${base}/settings/credits`;
+  return `${base}/settings/manage-credits/purchase`;
 }
 
 /**

@@ -31,7 +31,7 @@ export interface EntropyReceipt {
   signature: string;
 }
 
-/** What a paid draw cost, and the wallet balance after it (tokens). */
+/** What a paid draw cost, and the wallet balance after it (credits). */
 export interface DrawBilling {
   costTokens: number;
   balanceTokens: number | null;

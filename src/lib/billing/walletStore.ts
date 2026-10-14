@@ -39,13 +39,13 @@ export function refreshWallet(): Promise<void> {
 }
 
 /**
- * Apply the balance a draw reported (tokens) at once, then re-read the wallet
+ * Apply the balance a draw reported (credits) at once, then re-read the wallet
  * in the background so the history gains the draw's ledger row too. (Before,
- * only the balance moved, and a later visit to /settings/credits within the
+ * only the balance moved, and a later visit to the credits pages within the
  * same page session showed the history from the first load.)
  */
-export function setWalletBalance(balanceTokens: number) {
-  if (state.status === "ready") emit({ status: "ready", data: { ...state.data, balanceCents: balanceTokens } });
+export function setWalletBalance(balanceCredits: number) {
+  if (state.status === "ready") emit({ status: "ready", data: { ...state.data, balanceCents: balanceCredits } });
   void refreshWallet();
 }
 
@@ -55,6 +55,10 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
+// Stable reference: React requires getServerSnapshot to return the same value
+// on every call, or it warns about an infinite loop.
+const SERVER_SNAPSHOT: WalletState = { status: "loading" };
+
 export function useWallet(): WalletState {
-  return useSyncExternalStore(subscribe, () => state, () => ({ status: "loading" }) as WalletState);
+  return useSyncExternalStore(subscribe, () => state, () => SERVER_SNAPSHOT);
 }

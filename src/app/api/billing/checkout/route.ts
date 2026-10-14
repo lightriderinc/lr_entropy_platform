@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic";
  * POST /api/billing/checkout  { amountUsd }
  * Starts the same Stripe Checkout as the cloud platform's credit top-up, for
  * the same wallet. Cloud creates the session and its webhook credits the
- * balance; Stripe returns the user to this app's /settings/credits.
+ * balance; Stripe returns the user to this app's /settings/credits, which redirects
+ * to /settings/manage-credits (next.config.ts).
  */
 export async function POST(request: NextRequest) {
   let user;

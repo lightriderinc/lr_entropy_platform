@@ -32,7 +32,7 @@ const json = (body: unknown, status = 200) => NextResponse.json(body, { status }
  * charged for bytes they did not receive, and no bytes leave without a
  * stored receipt. The flow itself lives in lib/draws/performDraw.ts, shared
  * with the developer API (/api/v1/entropy).
- * Price: 1 LR token (= 1 credit = $0.01) per 256 bytes, minimum 1.
+ * Price: 1 Light Rider credit ($0.01) per 256 bytes, minimum 1.
  */
 export async function POST(request: NextRequest) {
   let user;

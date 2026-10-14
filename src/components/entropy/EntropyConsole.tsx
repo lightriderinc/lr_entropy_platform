@@ -59,7 +59,7 @@ export default function EntropyConsole({
         err instanceof EntropyRequestError &&
         (err.code === "insufficient_credits" || err.code === "credits_locked")
       ) {
-        setCreditsNotice({ locked: err.code === "credits_locked", message: err.message, buyUrl: err.buyUrl ?? "/settings/credits" });
+        setCreditsNotice({ locked: err.code === "credits_locked", message: err.message, buyUrl: err.buyUrl ?? "/settings/manage-credits/purchase" });
       } else if (err instanceof EntropyRequestError && err.outOfEntropy) {
         setOutOfEntropy(err.emsSourceId ? sourceDisplayName(err.emsSourceId) : request.sourceName);
       } else {

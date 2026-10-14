@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { refreshWallet } from "@/lib/billing/walletStore";
 
 /**
- * Banner after Stripe returns to /settings/credits. Stripe's webhook credits
+ * Banner after Stripe returns to /settings/credits (redirected to
+ * /settings/manage-credits). Stripe's webhook credits
  * the wallet on the cloud platform a moment after the redirect, so on success
  * this re-reads the balance a few times until it moves.
  */

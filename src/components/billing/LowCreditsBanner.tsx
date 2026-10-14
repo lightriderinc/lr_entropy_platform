@@ -1,5 +1,6 @@
 "use client";
 
+import { PURCHASE_CREDITS_HREF } from "@/components/billing/CreditsSummary";
 import { useWallet } from "@/lib/billing/walletStore";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -49,7 +50,7 @@ export default function LowCreditsBanner() {
         Only {data!.balanceCents.toLocaleString()} Light Rider credits left — top up to keep generating entropy.
       </p>
       <Link
-        href="/settings/credits#buy"
+        href={PURCHASE_CREDITS_HREF}
         className="shrink-0 default-radius bg-amber-500 px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
       >
         Buy more credits
