@@ -1,7 +1,7 @@
 import { apiError, authenticate, okJson } from "@/lib/api/v1";
 import { DRAW_MAX_BYTES, DRAW_MIN_BYTES } from "@/lib/draws/performDraw";
 import { MAX_CUSTOM_SOURCES, MIN_CUSTOM_SOURCES, SINGLE_SOURCE_OPTIONS, sourceDisplayName } from "@/lib/entropy/modes";
-import { BYTES_PER_TOKEN } from "@/lib/entropy/pricing";
+import { BYTES_PER_CREDIT } from "@/lib/entropy/pricing";
 import { getEntropyCatalog } from "@/lib/sources/egress";
 
 export const runtime = "nodejs";
@@ -56,6 +56,7 @@ export async function GET(request: Request) {
       custom_pool_sources: { min: MIN_CUSTOM_SOURCES, max: MAX_CUSTOM_SOURCES },
       requests_per_minute: key.rateLimitPerMinute,
     },
-    price: { bytes_per_token: BYTES_PER_TOKEN, usd_per_token: 0.01 },
+    // Wire names kept as *_token for API compatibility; a token here is one credit.
+    price: { bytes_per_token: BYTES_PER_CREDIT, usd_per_token: 0.01 },
   });
 }

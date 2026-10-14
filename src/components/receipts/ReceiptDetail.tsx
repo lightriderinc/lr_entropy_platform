@@ -6,7 +6,7 @@ import CopyButton from "@/components/ui/CopyButton";
 import LRButton from "@/components/ui/LRButton";
 import { parseReceiptLossless, verifyReceipt } from "@/lib/receipts/canonical";
 import { stringify } from "lossless-json";
-import { formatTokens } from "@/lib/entropy/pricing";
+import { formatCredits } from "@/lib/entropy/pricing";
 import { MODE_LABELS, STATUS_LABELS } from "./labels";
 
 type Detail = {
@@ -112,7 +112,7 @@ export default function ReceiptDetail({ requestId, onClose }: { requestId: strin
                   />
                 </div>
                 <Field label="Bytes" value={field("output_bytes")} />
-                <Field label="Charged" value={formatTokens(detail.costTokens)} />
+                <Field label="Charged" value={formatCredits(detail.costTokens)} />
                 <Field label="Input min-entropy" value={`${field("input_min_entropy_bits")} bits`} />
                 <Field label="Quality score" value={field("quality_score")} />
                 <Field label="Extractor" value={field("extractor_alg")} />

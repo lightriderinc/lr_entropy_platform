@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { formatTokens } from "@/lib/entropy/pricing";
+import { formatCredits } from "@/lib/entropy/pricing";
 import { sourceDisplayName } from "@/lib/entropy/modes";
 import ReceiptDetail from "./ReceiptDetail";
 import { MODE_LABELS, STATUS_LABELS } from "./labels";
@@ -134,7 +134,7 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
                   </td>
                   <td className="py-2 pr-3 text-right text-gray-700">{r.bytes.toLocaleString()}</td>
                   <td className="py-2 pr-3 text-right text-gray-700">
-                    {r.status === "failed" ? "Not charged" : formatTokens(r.costTokens)}
+                    {r.status === "failed" ? "Not charged" : formatCredits(r.costTokens)}
                   </td>
                   <td className="py-2 pr-3">
                     <span

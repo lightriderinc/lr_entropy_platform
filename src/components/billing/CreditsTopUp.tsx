@@ -1,11 +1,14 @@
 "use client";
 
 import LRButton from "@/components/ui/LRButton";
+import { useWallet } from "@/lib/billing/walletStore";
+import { BYTES_PER_CREDIT, formatBytes, formatCredits } from "@/lib/entropy/pricing";
 import { useState } from "react";
 
 // Same packs, limits and unit price as the cloud platform's top-up
 // (cloud_platform_nextjs src/components/billing/CreditsTopUp.tsx), so the one
-// wallet is bought the same way on either platform.
+// wallet is bought the same way on either platform. Layout mirrors cloud's;
+// checkout goes through this app's /api/billing/checkout.
 const PRESETS = [5000, 10000, 25000, 100000];
 const MIN_CREDITS = 500;
 const MAX_CREDITS = 1000000;
@@ -16,13 +19,19 @@ export default function CreditsTopUp() {
   const [customValue, setCustomValue] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const wallet = useWallet();
 
   const customCredits = customValue === "" ? null : Number(customValue);
-  const customOut =
+  const isCustomOutOfRange =
     customCredits !== null && (customCredits < MIN_CREDITS || customCredits > MAX_CREDITS);
   const priceUsd = credits * CREDIT_PRICE_USD;
 
-  function handleCustom(value: string) {
+  function selectPreset(value: number) {
+    setCredits(value);
+    setCustomValue("");
+  }
+
+  function handleCustomChange(value: string) {
     if (value !== "" && !/^\d+$/.test(value)) return;
     setCustomValue(value);
     const n = Number(value);
@@ -48,55 +57,106 @@ export default function CreditsTopUp() {
   }
 
   return (
-    <div id="buy" className="flex-1 default-radius border border-gray-50 bg-gray-50 p-5">
-      <h2 className="text-lg font-semibold text-gray-800">Buy credits</h2>
-      <p className="mt-1 text-sm text-gray-500">Secure checkout by Stripe. Credits never expire.</p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {PRESETS.map((n) => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => {
-              setCredits(n);
-              setCustomValue("");
-            }}
-            className={[
-              "px-3 py-2 default-radius border text-sm font-medium cursor-pointer transition-all",
-              customValue === "" && credits === n
-                ? "border-[var(--brand-primary)] text-[var(--brand-primary)] bg-white"
-                : "border-gray-200 text-gray-700 bg-white hover:border-gray-300",
-            ].join(" ")}
-          >
-            {n.toLocaleString()} credits
-            <span className="ml-1.5 text-xs text-gray-400">${(n * CREDIT_PRICE_USD).toLocaleString()}</span>
-          </button>
-        ))}
+    <div className="flex-1 default-radius border border-gray-50 bg-gray-50 p-5">
+      <div className="flex flex-row flex-wrap justify-between items-end gap-2">
+        <h2 className="text-lg font-semibold text-gray-800">Buy credits</h2>
+        <div className="inline-flex">
+          <span className="text-sm">Current balance:</span>
+          {wallet.status === "loading" ? (
+            <span className="ml-1 h-5 w-20 animate-pulse rounded bg-gray-200" />
+          ) : (
+            <span className="ml-1 text-sm font-medium">
+              {wallet.status === "ready" && !wallet.data.disabled
+                ? formatCredits(wallet.data.balanceCents)
+                : "—"}
+            </span>
+          )}
+        </div>
       </div>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={customValue}
-        onChange={(e) => handleCustom(e.target.value)}
-        placeholder={`Custom amount (${MIN_CREDITS.toLocaleString()}–${MAX_CREDITS.toLocaleString()} credits)`}
-        className="mt-3 w-full default-radius border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--brand-primary)]"
-      />
-      {customOut && (
-        <p className="mt-1.5 text-xs text-red-500">
-          Enter between {MIN_CREDITS.toLocaleString()} and {MAX_CREDITS.toLocaleString()} credits.
-        </p>
-      )}
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <p className="text-sm text-gray-600">
-          {credits.toLocaleString()} credits = <span className="font-semibold">${priceUsd.toLocaleString()}</span>
-          <span className="ml-1 text-xs text-gray-400">
-            (about {((credits * 256) / 1024).toLocaleString()} KiB of entropy)
-          </span>
-        </p>
-        <LRButton type="button" variant="primary" onClick={buy} disabled={busy || customOut}>
-          {busy ? "Opening checkout…" : "Buy credits"}
+
+      <div className="my-8">
+        <span className="mb-2 block text-sm font-medium text-gray-600">Choose an amount</span>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+          {PRESETS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => selectPreset(preset)}
+              className={`pl-3 px-6 py-3 default-radius text-md font-medium border transition-colors cursor-pointer ${
+                credits === preset && !customValue
+                  ? "border-[var(--brand-primary)] bg-red-50 text-[var(--brand-primary)]"
+                  : "border-gray-100 bg-white text-gray-600 hover:border-[var(--brand-primary)]"
+              }`}
+            >
+              <div className="flex flex-col items-start">
+                <span className="text-lg">{preset.toLocaleString()}</span>
+                <span className="text-xs opacity-75 mb-4">Credits</span>
+                <span className="text-sm">${(preset * CREDIT_PRICE_USD).toFixed(2)}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <label className="mb-1 block text-sm text-gray-600">
+          Custom amount
+          <div className="relative mt-1">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={customValue}
+              onChange={(e) => handleCustomChange(e.target.value)}
+              placeholder="e.g. 30000"
+              className={`w-full default-radius border bg-white py-2 pl-3 pr-16 text-sm text-gray-700 focus:outline-none focus:border-[var(--brand-primary)] ${
+                isCustomOutOfRange ? "border-red-400" : "border-gray-300"
+              }`}
+            />
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-gray-500">
+              Credits
+            </span>
+          </div>
+        </label>
+        <span className={`text-xs ${isCustomOutOfRange ? "text-red-600" : "text-gray-500"}`}>
+          Enter a value between {MIN_CREDITS.toLocaleString()}-{MAX_CREDITS.toLocaleString()}
+        </span>
+      </div>
+
+      <div className="flex flex-col default-radius bg-gray-100 my-4 p-3">
+        <span className="text-sm font-medium mb-4 text-gray-300">Summary</span>
+        <div className="flex flex-col gap-1 pb-4">
+          <SummaryRow label="Credits" value={credits.toLocaleString()} />
+          <SummaryRow label="Price per credit" value={`$${CREDIT_PRICE_USD}`} />
+          <SummaryRow label="Entropy" value={`Up to ${formatBytes(credits * BYTES_PER_CREDIT)}`} />
+        </div>
+        <div className="pt-3 border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-gray-600">Total</span>
+            <span className="text-lg font-medium text-gray-800">${priceUsd.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <LRButton
+          type="button"
+          variant="primary"
+          className="w-full"
+          onClick={buy}
+          disabled={busy || isCustomOutOfRange}
+        >
+          {busy ? "Opening checkout…" : `Buy for $${priceUsd.toFixed(2)}`}
         </LRButton>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <p className="mt-1 text-xs text-gray-500">Secure checkout by Stripe. Credits never expire.</p>
       </div>
-      {error && <p className="mt-2 text-xs text-[var(--brand-primary)]">{error}</p>}
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-sm text-gray-600">{label}</span>
+      <span className="text-sm font-medium text-gray-500">{value}</span>
     </div>
   );
 }

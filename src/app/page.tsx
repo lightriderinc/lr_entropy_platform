@@ -1,4 +1,4 @@
-import DashboardCredits from "@/components/billing/DashboardCredits";
+import CreditsSummary from "@/components/billing/CreditsSummary";
 import LowCreditsBanner from "@/components/billing/LowCreditsBanner";
 import HowItWorksCard from "@/components/HowItWorksCard";
 import QuickAccess from "@/components/QuickAccess";
@@ -23,7 +23,7 @@ export default async function DashboardPage() {
           <LowCreditsBanner />
           <div className="mb-12">
             <h2 className="mb-4 text-xl font-semibold text-gray-600">Credits</h2>
-            <DashboardCredits />
+            <CreditsSummary historyLink />
           </div>
         </>
       )}

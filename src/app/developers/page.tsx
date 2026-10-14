@@ -90,7 +90,7 @@ assert lr.entropy.verify(r.receipt)            # Ed25519 against EMS's published
           Use your account&apos;s Light Rider API key (<code className="font-mono">lr_live_...</code>), the same key as on
           Light Rider Cloud. Every example below reads it from <code className="font-mono">LR_API_KEY</code>, so nothing
           needs editing. Draws are paid from your Light Rider credits, the same as on the website:{" "}
-          <span className="font-medium">1 token per 256 bytes</span> (minimum 1), charged before the draw and refunded if
+          <span className="font-medium">1 credit per 256 bytes</span> (minimum 1), charged before the draw and refunded if
           nothing is delivered.
         </p>
         <KeySetup signedIn={Boolean(isAuthenticated)} />
