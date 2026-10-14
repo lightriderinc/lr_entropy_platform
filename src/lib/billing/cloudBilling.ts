@@ -69,7 +69,23 @@ async function call<T>(
     headers["X-LR-Api-Key"] = caller.key;
   } else {
     try {
-      headers["X-LR-User-Authorization"] = `Bearer ${await getAccessToken(logtoConfig, BILLING_RESOURCE)}`;
+      const token = await getAccessToken(logtoConfig, BILLING_RESOURCE);
+      // TEMP DEBUG: claims only (never the token), to compare with cloud's verify().
+      if (process.env.NODE_ENV !== "production") {
+        try {
+          const c = JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString());
+          console.warn("[billing][debug] token claims: " + JSON.stringify({
+            parts: token.split(".").length,
+            iss: c.iss,
+            aud: c.aud,
+            client_id: c.client_id,
+            exp: c.exp && new Date(c.exp * 1000).toISOString(),
+          }));
+        } catch {
+          console.warn("[billing][debug] token is not a JWT (opaque), parts:", token.split(".").length);
+        }
+      }
+      headers["X-LR-User-Authorization"] = `Bearer ${token}`;
     } catch (err) {
       // Logged (message only, never a token) so "Please sign in again" can be
       // traced: "Refresh token not found" means the session lost its refresh
