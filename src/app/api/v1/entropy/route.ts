@@ -24,7 +24,10 @@ const API_MODES: ReadonlySet<string> = new Set(["source", "custom"]);
  * A source is named by its alias ("anu") or full id ("anu_aws_001"); the
  * receipt always carries the full id.
  *
- * 200 { request_id, bytes, bytes_hex, billing: { cost_tokens, balance_tokens }, receipt }
+ * 200 { request_id, bytes, bytes_hex, commitment_salt, billing: { cost_tokens, balance_tokens }, receipt }
+ * commitment_salt (hex) opens the receipt's signed output_commitment:
+ * sha256(salt || bytes) == receipt.output_commitment proves these are the
+ * exact bytes EMS signed for. Neither the bytes nor the salt are stored.
  * The receipt is the EMS-signed JSON exactly as stored (verify it with
  * GET /api/v1/public-key). Same flow and price as the website: 1 credit per
  * 256 bytes, charged before the draw, refunded if nothing is delivered.
@@ -107,13 +110,15 @@ export async function POST(request: Request) {
 
   const b = result.body as {
     bytes_hex?: string;
+    commitment_salt?: string;
     receipt?: { request_id?: string };
     billing?: { costTokens: number; balanceTokens: number | null } | null;
   };
   const billing = b.billing ? { cost_tokens: b.billing.costTokens, balance_tokens: b.billing.balanceTokens } : null;
   return rawJson(
     `{"request_id":${JSON.stringify(b.receipt?.request_id ?? null)},"bytes":${bytes},` +
-      `"bytes_hex":${JSON.stringify(b.bytes_hex ?? "")},"billing":${JSON.stringify(billing)},` +
+      `"bytes_hex":${JSON.stringify(b.bytes_hex ?? "")},"commitment_salt":${JSON.stringify(b.commitment_salt ?? null)},` +
+      `"billing":${JSON.stringify(billing)},` +
       `"receipt":${result.signedJson}}`,
   );
 }
