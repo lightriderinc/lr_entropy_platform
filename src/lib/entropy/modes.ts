@@ -68,16 +68,22 @@ export interface SiteSource {
   kind: string;
   /** Tier pool this source's surplus feeds. */
   tier: TierId;
+  /**
+   * Short, stable name developers can use instead of the id, in the developer
+   * API (/api/v1) and so in the SDK, which passes it straight through. The
+   * full id is still what draws, receipts and history record.
+   */
+  alias?: string;
   comingSoon?: true;
 }
 
 export const SITE_SOURCES: SiteSource[] = [
-  { id: "anu_aws_001", name: "ANU Quantum RNG", tag: "QRNG", kind: "Quantum optical source (photon vacuum)", tier: "highest_quality" },
-  { id: "cisco_qrng_001", name: "Cisco Outshift QRNG", tag: "QRNG", kind: "Cloud quantum random number generator", tier: "highest_quality" },
-  { id: "lightrider_qec_001", name: "Light Rider QEC (IQM)", tag: "QPU", kind: "Error-corrected quantum processor", tier: "highest_quality" },
-  { id: "qispace_kds_001", name: "QiSpace TQRND", tag: "QRNG", kind: "Quantum random number generator", tier: "highest_quality" },
-  { id: "rigetti_cepheus_001", name: "Rigetti Cepheus-1-108Q", tag: "QPU", kind: "Superconducting quantum processor", tier: "quantum_verified" },
-  { id: "iqm_resonance_001", name: "IQM Resonance", tag: "QPU", kind: "Superconducting quantum processor", tier: "highest_quality" },
+  { id: "anu_aws_001", alias: "anu", name: "ANU Quantum RNG", tag: "QRNG", kind: "Quantum optical source (photon vacuum)", tier: "highest_quality" },
+  { id: "cisco_qrng_001", alias: "cisco", name: "Cisco Outshift QRNG", tag: "QRNG", kind: "Cloud quantum random number generator", tier: "highest_quality" },
+  { id: "lightrider_qec_001", alias: "iqm-qec", name: "Light Rider QEC (IQM)", tag: "QPU", kind: "Error-corrected quantum processor", tier: "highest_quality" },
+  { id: "qispace_kds_001", alias: "qispace", name: "QiSpace TQRND", tag: "QRNG", kind: "Quantum random number generator", tier: "highest_quality" },
+  { id: "rigetti_cepheus_001", alias: "rigetti", name: "Rigetti Cepheus-1-108Q", tag: "QPU", kind: "Superconducting quantum processor", tier: "quantum_verified" },
+  { id: "iqm_resonance_001", alias: "iqm", name: "IQM Resonance", tag: "QPU", kind: "Superconducting quantum processor", tier: "highest_quality" },
   // --- Coming soon -----------------------------------------------------------
   ...(
     [
@@ -144,7 +150,25 @@ export function singleSourceDrawId(cardId: string, qec: boolean): string {
   return qec && QEC_VARIANT[cardId] ? QEC_VARIANT[cardId] : cardId;
 }
 
-export type SingleSourceOption = Pick<SiteSource, "id" | "name" | "tag">;
+/**
+ * A developer-API source name -> the full source id: an alias ("anu") or a
+ * full id ("anu_aws_001"), case-insensitive for aliases. Only sources that
+ * can be drawn from (offered: not hidden, not coming soon). null otherwise.
+ */
+export function resolveSourceName(name: string): string | null {
+  const n = String(name ?? "").trim();
+  const byId = SITE_SOURCES.find((s) => s.id === n);
+  const byAlias = SITE_SOURCES.find((s) => s.alias && s.alias === n.toLowerCase());
+  const found = byId ?? byAlias;
+  return found && isOfferedSource(found.id) ? found.id : null;
+}
+
+/** "anu, cisco, ..." - the aliases a developer can use, for error messages and docs. */
+export function sourceAliasList(): string[] {
+  return SITE_SOURCES.filter((s) => s.alias && isOfferedSource(s.id)).map((s) => s.alias!);
+}
+
+export type SingleSourceOption = Pick<SiteSource, "id" | "name" | "tag" | "alias">;
 
 // Offered for single-source draws (the route's allowlist too). Must stay a
 // subset of SINGLE_SOURCES in ems-egress (config.rs).

@@ -1,19 +1,12 @@
+import CodeBlock from "@/components/developers/CodeBlock";
+import KeySetup from "@/components/developers/KeySetup";
 import InfoBox from "@/components/InfoBox";
-import CopyButton from "@/components/ui/CopyButton";
-import Link from "next/link";
+import { getSession } from "@/lib/auth/session";
+import { sourceAliasList } from "@/lib/entropy/modes";
 
 export const metadata = { title: "Developers" };
 
-function Code({ code }: { code: string }) {
-  return (
-    <div className="relative mt-2 default-radius bg-gray-900">
-      <div className="absolute right-2 top-2 default-radius bg-white">
-        <CopyButton value={code} label={null} />
-      </div>
-      <pre className="overflow-x-auto p-4 pr-14 font-mono text-xs leading-relaxed text-gray-100">{code}</pre>
-    </div>
-  );
-}
+const Code = CodeBlock;
 
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
@@ -27,34 +20,35 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-/** Public quickstart for the developer API. */
-export default function DevelopersPage() {
+/** Public quickstart for the developer API: set the key once, then copy-paste. */
+export default async function DevelopersPage() {
+  const { isAuthenticated } = await getSession();
   const base = (process.env.NEXT_BASE_URL || "https://<this-site>").replace(/\/$/, "");
 
   const curlSources = `curl -s ${base}/api/v1/sources \\
-  -H "Authorization: Bearer $LR_ENTROPY_KEY"`;
+  -H "Authorization: Bearer $LR_API_KEY"`;
 
   const curlDraw = `curl -s ${base}/api/v1/entropy \\
-  -H "Authorization: Bearer $LR_ENTROPY_KEY" \\
+  -H "Authorization: Bearer $LR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -H "Idempotency-Key: $(uuidgen)" \\
-  -d '{"bytes": 32, "mode": "source", "id": "anu_aws_001"}'`;
+  -d '{"bytes": 32, "mode": "source", "id": "anu"}'`;
 
   const curlCustom = `curl -s ${base}/api/v1/entropy \\
-  -H "Authorization: Bearer $LR_ENTROPY_KEY" \\
+  -H "Authorization: Bearer $LR_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"bytes": 64, "mode": "custom", "ids": ["anu_aws_001", "cisco_qrng_001"]}'`;
+  -d '{"bytes": 64, "mode": "custom", "ids": ["anu", "cisco"]}'`;
 
   const python = `import json, os, uuid, requests
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
 BASE = "${base}"
-KEY = os.environ["LR_ENTROPY_KEY"]
+KEY = os.environ["LR_API_KEY"]
 
 r = requests.post(
     f"{BASE}/api/v1/entropy",
     headers={"Authorization": f"Bearer {KEY}", "Idempotency-Key": str(uuid.uuid4())},
-    json={"bytes": 32, "mode": "source", "id": "anu_aws_001"},
+    json={"bytes": 32, "mode": "source", "id": "anu"},
     timeout=60,
 )
 r.raise_for_status()
@@ -69,6 +63,12 @@ signature = bytes.fromhex(receipt.pop("signature"))
 canonical = json.dumps(receipt, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 Ed25519PublicKey.from_public_bytes(bytes.fromhex(pub)).verify(signature, canonical)  # raises if tampered
 print(receipt["contributing_sources"], receipt["request_id"])`;
+
+  const sdk = `import lightrider as lr   # pip install "lightrider>=1.6.0"  (1.6.0 is coming to PyPI soon)
+
+r = lr.entropy.get(16, source="anu")           # or sources=["anu", "cisco"]
+print(r.hex, r.request_id, r.sources)
+assert lr.entropy.verify(r.receipt)            # Ed25519 against EMS's published key`;
 
   return (
     <div className="animate-fade-in-up flex max-w-4xl flex-col gap-4 pb-12">
@@ -85,17 +85,16 @@ print(receipt["contributing_sources"], receipt["request_id"])`;
         generator.
       </InfoBox>
 
-      <Step n={1} title="Get your Light Rider API key">
-        Use your account&apos;s Light Rider API key (<code className="font-mono">lr_live_...</code>), the same key as on
-        Light Rider Cloud. Create or rotate it under{" "}
-        <Link href="/settings/api-keys" className="font-medium text-blue-600 underline hover:text-[var(--brand-primary)]">
-          Settings → API key
-        </Link>
-        . It is shown once; store it as a secret (for example <code className="font-mono">LR_ENTROPY_KEY</code>). Draws
-        are paid from your Light Rider credits, the same as on the website:{" "}
-        <span className="font-medium">1 credit per 256 bytes</span> (minimum 1), charged before the draw and refunded if
-        nothing is delivered.
-        <p className="mt-2 default-radius border border-amber-200 bg-amber-50 p-2 text-amber-800">
+      <Step n={1} title="Set your API key">
+        <p className="mb-3">
+          Use your account&apos;s Light Rider API key (<code className="font-mono">lr_live_...</code>), the same key as on
+          Light Rider Cloud. Every example below reads it from <code className="font-mono">LR_API_KEY</code>, so nothing
+          needs editing. Draws are paid from your Light Rider credits, the same as on the website:{" "}
+          <span className="font-medium">1 credit per 256 bytes</span> (minimum 1), charged before the draw and refunded if
+          nothing is delivered.
+        </p>
+        <KeySetup signedIn={Boolean(isAuthenticated)} />
+        <p className="mt-3 default-radius border border-amber-200 bg-amber-50 p-2 text-amber-800">
           This is your account&apos;s <span className="font-semibold">full-access</span> key: anyone holding it can also
           spend your credits on Light Rider Cloud (QPU jobs, reservations). Keep it out of public code and Spaces, and
           rotate it if it leaks.
@@ -103,10 +102,22 @@ print(receipt["contributing_sources"], receipt["request_id"])`;
       </Step>
 
       <Step n={2} title="See what you can draw from">
+        <p className="text-xs text-gray-500">The curl examples are for macOS / Linux shells; on Windows, use the Python example.</p>
         <Code code={curlSources} />
         <p className="mt-2">
           Each source shows whether it is <code className="font-mono">ready</code> or <code className="font-mono">empty</code>{" "}
           (refill pending) and the largest single draw it can serve right now.
+        </p>
+        <p className="mt-2">
+          Name a source by its short alias:{" "}
+          {sourceAliasList().map((a, n) => (
+            <span key={a}>
+              {n > 0 && ", "}
+              <code className="font-mono">{a}</code>
+            </span>
+          ))}
+          . The full id (for example <code className="font-mono">anu_aws_001</code>) works too, and receipts always
+          record the full id.
         </p>
       </Step>
 
@@ -122,7 +133,10 @@ print(receipt["contributing_sources"], receipt["request_id"])`;
         </p>
       </Step>
 
-      <Step n={4} title="Python, with receipt verification">
+      <Step n={4} title="Python">
+        <p>With the Light Rider SDK (reads <code className="font-mono">LR_API_KEY</code> itself):</p>
+        <Code code={sdk} />
+        <p className="mt-3">Or plain HTTP, with receipt verification:</p>
         <Code code={python} />
         <p className="mt-2">
           Needs <code className="font-mono">pip install requests cryptography</code>. Fetch any of your receipts again with{" "}

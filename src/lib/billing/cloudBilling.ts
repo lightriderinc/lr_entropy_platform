@@ -53,7 +53,7 @@ export type BillingResponse<T> = { status: number; data: T };
 type Caller = { kind: "user" } | { kind: "apiKey"; key: string };
 
 async function call<T>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "DELETE",
   path: string,
   body?: unknown,
   caller: Caller = { kind: "user" },
@@ -200,3 +200,19 @@ export function apiKeyBilling(key: string) {
       ),
   };
 }
+
+/** Key metadata as cloud returns it (dates as ISO strings). Never the key itself. */
+export type ApiKeyInfo = { keyPrefix: string; createdAt: string; lastUsedAt: string | null; rotatedAt: string | null };
+
+/**
+ * The signed-in user's ONE Light Rider API key, managed through cloud (the
+ * key lives only in cloud's ApiKey table, the same row cloud's own API Keys
+ * page manages). Authenticated like the wallet: the shared secret plus the
+ * user's own Logto token.
+ */
+export const apiKeyAccount = {
+  get: () => call<{ apiKey: ApiKeyInfo | null; error?: string }>("GET", "/api/internal/entropy/api-key"),
+  create: () => call<{ key?: string; keyPrefix?: string; error?: string; message?: string }>("POST", "/api/internal/entropy/api-key", {}),
+  rotate: () => call<{ key?: string; keyPrefix?: string; error?: string }>("POST", "/api/internal/entropy/api-key/rotate", {}),
+  revoke: () => call<{ revoked?: boolean; error?: string }>("DELETE", "/api/internal/entropy/api-key"),
+};
