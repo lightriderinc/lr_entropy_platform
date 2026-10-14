@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 /**
  * GET /api/v1/sources  (Authorization: Bearer lr_live_...)
  *
- * The sources you can draw from right now: the same Available list as the
+ * The sources you can draw from right now, each with its short `alias`
+ * ("anu"), usable anywhere /api/v1/entropy takes a source. The same Available list as the
  * website (sources with their own pool). For each: whether it is ready, how
  * many bytes one single-source draw could take now, and whether it can join a
  * custom pool (with EMS's reason when it can't).
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
     return [
       {
         id: s.id,
+        alias: s.alias ?? null,
         name: sourceDisplayName(s.id),
         type: s.tag,
         state: single.state,

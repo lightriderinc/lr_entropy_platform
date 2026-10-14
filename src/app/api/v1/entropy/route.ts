@@ -3,6 +3,7 @@ import { apiError, authenticate, drawError, drawIdFor, rawJson } from "@/lib/api
 import { apiKeyBilling, isBillingDisabledForDev } from "@/lib/billing/cloudBilling";
 import { DRAW_MAX_BYTES, DRAW_MIN_BYTES, performDraw } from "@/lib/draws/performDraw";
 import { getDrawForReplay } from "@/lib/draws/store";
+import { resolveSourceName, sourceAliasList } from "@/lib/entropy/modes";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,8 +19,10 @@ const API_MODES: ReadonlySet<string> = new Set(["source", "custom"]);
  * POST /api/v1/entropy
  *   Authorization: Bearer lr_live_...   (the account's Light Rider API key)
  *   Idempotency-Key: <optional, any string up to 200 printable characters>
- *   { "bytes": 1..4096, "mode": "source", "id": "<source id>" }
- *   { "bytes": 1..4096, "mode": "custom", "ids": ["<id>", "<id>", ...] }    (2 to 8)
+ *   { "bytes": 1..4096, "mode": "source", "id": "anu" }
+ *   { "bytes": 1..4096, "mode": "custom", "ids": ["anu", "cisco", ...] }    (2 to 8)
+ * A source is named by its alias ("anu") or full id ("anu_aws_001"); the
+ * receipt always carries the full id.
  *
  * 200 { request_id, bytes, bytes_hex, billing: { cost_tokens, balance_tokens }, receipt }
  * The receipt is the EMS-signed JSON exactly as stored (verify it with
@@ -55,6 +58,19 @@ export async function POST(request: Request) {
     return apiError(400, "invalid_request", "mode \"custom\" needs \"ids\": 2 to 8 source ids from GET /api/v1/sources.");
   }
 
+  // Aliases ("anu") or full ids, resolved to full ids before anything else.
+  const names = mode === "source" ? [body.id as string] : (body.ids as string[]);
+  const unknown = names.filter((n) => !resolveSourceName(n));
+  if (unknown.length) {
+    return apiError(
+      400,
+      "invalid_request",
+      `Unknown source ${unknown.map((n) => `'${n}'`).join(", ")}. Use one of: ${sourceAliasList().join(", ")} (or a full id from GET /api/v1/sources).`,
+      { valid_sources: sourceAliasList() },
+    );
+  }
+  const ids = names.map((n) => resolveSourceName(n)!);
+
   const idempotencyKey = request.headers.get("idempotency-key");
   const drawId = drawIdFor(key.userSub, idempotencyKey);
   if (!drawId) return apiError(400, "invalid_request", "Idempotency-Key must be 1 to 200 printable characters.");
@@ -62,7 +78,7 @@ export async function POST(request: Request) {
   const result = await performDraw({
     userSub: key.userSub,
     drawId,
-    input: { mode, id: body.id as string | undefined, ids: body.ids as string[] | undefined, bytes },
+    input: mode === "source" ? { mode, id: ids[0], bytes } : { mode, ids, bytes },
     channel: "api",
     apiKeyPrefix: key.keyPrefix,
     biller: isBillingDisabledForDev() ? null : apiKeyBilling(key.key),
