@@ -27,6 +27,8 @@ export interface EntropyReceipt {
   raw_entropy_stored: boolean;
   audit_event_id: string;
   zone_id: string;
+  /** sha256:<hex> of salt || bytes, signed; absent on older receipts. */
+  output_commitment?: string;
   signature_alg: string;
   signature: string;
 }

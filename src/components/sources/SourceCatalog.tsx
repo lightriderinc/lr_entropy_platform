@@ -4,6 +4,7 @@ import {
   createEmptyFilters,
   filterSources,
   type DirectorySource,
+  type SourceFilterGroup,
   type SourceFilterState,
 } from "@/lib/sources/filters";
 import { useEffect, useState } from "react";
@@ -44,16 +45,20 @@ export default function SourceCatalog({ sources }: { sources: DirectorySource[] 
     sessionStorage.setItem(VIEW_KEY, next);
   }
 
-  function handleFilterToggle(value: string) {
+  function handleFilterToggle(group: SourceFilterGroup, value: string) {
     setFilters((prev) => {
-      const values = new Set(prev.policy);
+      const values = new Set(prev[group]);
       if (values.has(value)) {
         values.delete(value);
       } else {
         values.add(value);
       }
-      return { policy: values };
+      return { ...prev, [group]: values };
     });
+  }
+
+  function handleClearFilterGroup(group: SourceFilterGroup) {
+    setFilters((prev) => ({ ...prev, [group]: new Set() }));
   }
 
   function handleClearFilters() {
@@ -75,6 +80,7 @@ export default function SourceCatalog({ sources }: { sources: DirectorySource[] 
           <SourceFilterBar
             filters={filters}
             onToggle={handleFilterToggle}
+            onClearGroup={handleClearFilterGroup}
             onClearAll={handleClearFilters}
           />
           <div className="flex items-center gap-1 default-radius border border-gray-100 p-1">

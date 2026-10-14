@@ -15,13 +15,24 @@ export interface DirectorySource extends Source {
 
 export interface SourceFilterState {
   policy: Set<string>;
+  access: Set<string>;
 }
+
+export type SourceFilterGroup = keyof SourceFilterState;
 
 export function createEmptyFilters(): SourceFilterState {
-  return { policy: new Set() };
+  return { policy: new Set(), access: new Set() };
 }
 
-export function filterSources<T extends Source>(sources: T[], filters: SourceFilterState): T[] {
-  if (filters.policy.size === 0) return sources;
-  return sources.filter((s) => filters.policy.has(s.policy));
+// Groups AND together; values within a group OR together. An empty group
+// doesn't constrain anything.
+export function filterSources<T extends DirectorySource>(
+  sources: T[],
+  filters: SourceFilterState,
+): T[] {
+  return sources.filter(
+    (s) =>
+      (filters.policy.size === 0 || filters.policy.has(s.policy)) &&
+      (filters.access.size === 0 || filters.access.has(s.availability)),
+  );
 }

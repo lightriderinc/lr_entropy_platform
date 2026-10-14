@@ -20,17 +20,14 @@ export default function SourceList({ sources }: { sources: DirectorySource[] }) 
               <tr
                 key={s.id}
                 aria-disabled={comingSoon || undefined}
-                className={[
-                  "border-b border-gray-100 transition-colors last:border-0",
-                  comingSoon ? "bg-gray-50" : "bg-white hover:bg-gray-50",
-                ].join(" ")}
+                className={`border-b border-gray-100 transition-colors last:border-bg-white hover:bg-gray-50 ${comingSoon ? "opacity-70" : ""} `}
               >
-                <td className={`whitespace-nowrap px-4 py-3 font-medium ${comingSoon ? "text-gray-400" : "text-gray-800"}`}>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-800">
                   {s.name}
                 </td>
-                <td className={`px-4 py-3 ${comingSoon ? "text-gray-400" : "text-gray-700"}`}>{s.type}</td>
+                <td className="px-4 py-3 text-gray-700">{s.type}</td>
                 <td className="whitespace-nowrap px-4 py-3">
-                  <PolicyTag policy={s.policy} muted={comingSoon} />
+                  <PolicyTag policy={s.policy} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <SourceStatus source={s} />
