@@ -20,18 +20,24 @@ export default async function ReceiptsPage({
   const { request } = await searchParams;
 
   return (
-    <div className="animate-fade-in-up flex flex-col gap-4">
-      <div>
+    <div className="animate-fade-in-up flex flex-col">
+      <div className="mb-12">
         <h1 className="text-2xl font-semibold text-gray-700">Receipts</h1>
         <p className="mt-1 text-sm text-gray-600">
-          A signed receipt for every draw: which pool and sources served it, its quality checks, and what it cost.
+          A signed receipt for every draw: which pool and sources served it, its
+          quality checks, and what it cost.
         </p>
       </div>
-      <InfoBox>
-        Receipts are kept for your account. The entropy bytes themselves are never stored: copy or download them
-        when you generate them.
-      </InfoBox>
-      <ReceiptsBrowser initialRequestId={typeof request === "string" ? request : null} />
+      <div className="mb-4">
+        <InfoBox>
+          Receipts are kept for your account. The entropy bytes themselves are
+          never stored: copy or download them when you generate them.
+        </InfoBox>
+      </div>
+
+      <ReceiptsBrowser
+        initialRequestId={typeof request === "string" ? request : null}
+      />
     </div>
   );
 }
