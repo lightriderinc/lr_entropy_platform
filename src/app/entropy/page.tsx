@@ -1,4 +1,5 @@
 import EntropyConsole from "@/components/entropy/EntropyConsole";
+import HowItWorksSection from "@/components/HowItWorksSection";
 import InfoBox from "@/components/InfoBox";
 import { getEntropyCatalog } from "@/lib/sources/egress";
 import { getSources } from "@/lib/sources/ems";
@@ -21,6 +22,8 @@ export default function EntropyPage() {
         Generate certified entropy from quantum and hardware sources, then copy
         it straight into your workflow.
       </p>
+
+      <HowItWorksSection />
       <div className="mb-8">
         <InfoBox>
           Every drawn byte is health-tested, cryptographically extracted, and
