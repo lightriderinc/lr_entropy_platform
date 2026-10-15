@@ -1,7 +1,6 @@
 "use client";
 
 import { POOL_OPTIONS } from "@/lib/entropy/modes";
-import { MdLayers } from "react-icons/md";
 import EntropySourceCard from "./EntropySourceCard";
 
 export default function PoolSelector({
@@ -19,7 +18,7 @@ export default function PoolSelector({
           id={pool.id}
           name={pool.name}
           description={pool.description}
-          icon={<MdLayers />}
+          icon={<pool.icon />}
           selected={selectedId === pool.id}
           onSelect={() => onSelect(pool.id)}
         />
