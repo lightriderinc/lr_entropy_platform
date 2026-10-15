@@ -1,19 +1,17 @@
 "use client";
 
-import ComingSoonTag from "@/components/ui/ComingSoonTag";
-import { SourceTypeTag } from "./EntropySourceCard";
 import {
-  COMING_SOON_SOURCES,
   isOfferedSource,
-  siteSource,
   MAX_CUSTOM_SOURCES,
   MIN_CUSTOM_SOURCES,
+  siteSource,
   sourceDisplayName,
   type EntropyCatalog,
-  type MultiSourceStatus,
+  type MultiSourceStatus
 } from "@/lib/entropy/modes";
 import { use } from "react";
 import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
+import { SourceTypeTag } from "./EntropySourceCard";
 
 /** How much the source has right now (its own pool). */
 function balanceLabel(s: MultiSourceStatus): string {
@@ -101,7 +99,7 @@ export default function CustomSourcePicker({
             </li>
           );
         })}
-        {COMING_SOON_SOURCES.map((s) => (
+        {/* {COMING_SOON_SOURCES.map((s) => (
           <li key={s.id}>
             <div
               aria-disabled="true"
@@ -116,7 +114,7 @@ export default function CustomSourcePicker({
               <ComingSoonTag />
             </div>
           </li>
-        ))}
+        ))} */}
       </ul>
     </div>
   );

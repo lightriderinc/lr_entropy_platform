@@ -1,12 +1,11 @@
 "use client";
 
 import {
-  COMING_SOON_SOURCES,
   QEC_VARIANT,
   SINGLE_SOURCE_OPTIONS,
   sourceDisplayName,
   type EntropyCatalog,
-  type SourceStatus,
+  type SourceStatus
 } from "@/lib/entropy/modes";
 import { use } from "react";
 import { MdBlurOn } from "react-icons/md";
@@ -88,7 +87,7 @@ export default function SingleSourceSelector({
             onSelect={() => onSelect(source.id)}
           />
         ))}
-        {COMING_SOON_SOURCES.map((source) => (
+        {/* {COMING_SOON_SOURCES.map((source) => (
           <EntropySourceCard
             key={source.id}
             id={source.id}
@@ -98,7 +97,7 @@ export default function SingleSourceSelector({
             disabled
             onSelect={() => {}}
           />
-        ))}
+        ))} */}
       </div>
       {showQec && usedId && (
         <QecPanel
