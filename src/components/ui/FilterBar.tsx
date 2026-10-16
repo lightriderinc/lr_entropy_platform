@@ -22,6 +22,7 @@ type MenuKey<K extends string> = K | "all";
 // (via its x).
 export default function FilterBar<K extends string>({
   label,
+  align = "left",
   groups,
   filters,
   onToggle,
@@ -29,6 +30,8 @@ export default function FilterBar<K extends string>({
   onClearAll,
 }: {
   label: string;
+  /** Which edge the dropdowns line up with; "right" keeps them on-page when the bar sits at the right edge. */
+  align?: "left" | "right";
   groups: FilterGroup<K>[];
   filters: Record<K, Set<string>>;
   onToggle: (group: K, value: string) => void;
@@ -58,6 +61,7 @@ export default function FilterBar<K extends string>({
     };
   }, [openMenu]);
 
+  const menuEdge = align === "right" ? "right-0" : "left-0";
   const activeGroups = groups.filter((group) => filters[group.key].size > 0);
 
   function tagLabel(group: FilterGroup<K>): string {
@@ -87,7 +91,7 @@ export default function FilterBar<K extends string>({
       {openMenu === "all" && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-2 w-64 default-radius border border-gray-100 bg-white p-3 shadow-lg"
+          className={`absolute ${menuEdge} top-full z-50 mt-2 w-64 default-radius border border-gray-100 bg-white p-3 shadow-lg`}
         >
           <div className="flex flex-col gap-3">
             {groups.map((group, i) => (
@@ -137,7 +141,7 @@ export default function FilterBar<K extends string>({
           {openMenu === group.key && (
             <div
               role="menu"
-              className="absolute left-0 top-full z-50 mt-2 w-56 default-radius border border-gray-100 bg-white p-3 shadow-lg"
+              className={`absolute ${menuEdge} top-full z-50 mt-2 w-56 default-radius border border-gray-100 bg-white p-3 shadow-lg`}
             >
               <FilterSection
                 title={group.label}

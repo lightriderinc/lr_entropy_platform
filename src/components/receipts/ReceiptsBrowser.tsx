@@ -132,6 +132,7 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
         </span>
         <FilterBar
           label="Filter receipts"
+          align="right"
           groups={filterGroups}
           filters={filters}
           onToggle={toggleFilter}
