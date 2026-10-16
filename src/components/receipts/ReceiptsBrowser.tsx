@@ -1,11 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { MdChevronRight } from "react-icons/md";
-import { TbReceipt } from "react-icons/tb";
 import FilterBar, { type FilterGroup } from "@/components/ui/FilterBar";
-import { formatCredits } from "@/lib/entropy/pricing";
-import { sourceDisplayName } from "@/lib/entropy/modes";
+import { useCallback, useEffect, useState } from "react";
+import { TbReceipt } from "react-icons/tb";
 import ReceiptDetail from "./ReceiptDetail";
 import { MODE_LABELS, STATUS_LABELS } from "./labels";
 
@@ -28,7 +25,10 @@ type Filters = Record<FilterKey, Set<string>>;
 
 const emptyFilters = (): Filters => ({ mode: new Set(), pool: new Set() });
 
-async function fetchPage(params: { cursor?: string | null; filters: Filters }): Promise<Page> {
+async function fetchPage(params: {
+  cursor?: string | null;
+  filters: Filters;
+}): Promise<Page> {
   const q = new URLSearchParams();
   if (params.cursor) q.set("cursor", params.cursor);
   params.filters.mode.forEach((m) => q.append("mode", m));
@@ -38,7 +38,12 @@ async function fetchPage(params: { cursor?: string | null; filters: Filters }): 
   return res.json();
 }
 
-const HEADERS = ["Time", "Mode", "Pool", "Sources", "Bytes", "Charged", "Status", ""];
+const HEADERS = ["Request ID", "Time", "Pool", "Bytes", "Status"];
+
+/** First 8 chars of the request id — the full id is still in the DOM via `title`. */
+function shortId(id: string): string {
+  return `${id.slice(0, 8)}…`;
+}
 
 const STATUS_STYLES: Record<string, string> = {
   delivered: "bg-emerald-600 text-white",
@@ -59,7 +64,11 @@ function RowSkeleton() {
 }
 
 /** The signed-in user's receipts: newest first, filterable, paged. */
-export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId: string | null }) {
+export default function ReceiptsBrowser({
+  initialRequestId,
+}: {
+  initialRequestId: string | null;
+}) {
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [pools, setPools] = useState<string[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
@@ -117,9 +126,16 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
     {
       key: "mode",
       label: "Mode",
-      options: Object.entries(MODE_LABELS).map(([value, label]) => ({ value, label })),
+      options: Object.entries(MODE_LABELS).map(([value, label]) => ({
+        value,
+        label,
+      })),
     },
-    { key: "pool", label: "Pool", options: pools.map((p) => ({ value: p, label: p })) },
+    {
+      key: "pool",
+      label: "Pool",
+      options: pools.map((p) => ({ value: p, label: p })),
+    },
   ];
   const hasFilters = filters.mode.size > 0 || filters.pool.size > 0;
 
@@ -136,13 +152,17 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
           groups={filterGroups}
           filters={filters}
           onToggle={toggleFilter}
-          onClearGroup={(group) => applyFilters({ ...filters, [group]: new Set() })}
+          onClearGroup={(group) =>
+            applyFilters({ ...filters, [group]: new Set() })
+          }
           onClearAll={() => applyFilters(emptyFilters())}
         />
       </div>
 
       {state === "error" && (
-        <p className="text-sm text-red-500">Receipts could not be loaded right now.</p>
+        <p className="text-sm text-red-500">
+          Receipts could not be loaded right now.
+        </p>
       )}
 
       {state === "ready" && rows.length === 0 && (
@@ -164,65 +184,58 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
                 {HEADERS.map((h, i) => (
                   <th
                     key={i}
-                    className={[
-                      "whitespace-nowrap px-4 py-2 font-medium text-gray-700",
-                      h === "Bytes" || h === "Charged" ? "text-right" : "",
-                    ].join(" ")}
+                    className="whitespace-nowrap px-4 py-2 font-medium text-gray-700"
                   >
                     {h}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className={state === "loading" ? "animate-pulse" : undefined}>
+            <tbody
+              className={state === "loading" ? "animate-pulse" : undefined}
+            >
               {state === "loading"
-                ? Array.from({ length: 5 }).map((_, i) => <RowSkeleton key={i} />)
+                ? Array.from({ length: 5 }).map((_, i) => (
+                    <RowSkeleton key={i} />
+                  ))
                 : rows.map((r) => (
                     <tr
                       key={r.drawId}
-                      onClick={r.requestId ? () => setOpen(r.requestId) : undefined}
+                      onClick={
+                        r.requestId ? () => setOpen(r.requestId) : undefined
+                      }
                       className={[
                         "border-b border-gray-100 bg-white transition-colors last:border-0",
                         r.requestId ? "cursor-pointer hover:bg-gray-50" : "",
                       ].join(" ")}
                     >
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-500">
+                        {r.requestId ? (
+                          <span title={r.requestId}>
+                            {shortId(r.requestId)}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                         {new Date(r.createdAt).toLocaleString()}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3">
-                        <span className="rounded bg-zinc-600 px-2.5 py-0.5 text-xs font-medium text-white">
-                          {MODE_LABELS[r.mode] ?? r.mode}
-                        </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-500">
                         {r.poolId ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
-                        {r.contributingSources.length > 0
-                          ? r.contributingSources.map(sourceDisplayName).join(", ")
-                          : "—"}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                         {r.bytes.toLocaleString()}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
-                        {r.status === "failed" ? "Not charged" : formatCredits(r.costTokens)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <span
                           className={`inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium ${
-                            STATUS_STYLES[r.status] ?? "bg-gray-100 text-gray-600"
+                            STATUS_STYLES[r.status] ??
+                            "bg-gray-100 text-gray-600"
                           }`}
                         >
                           {STATUS_LABELS[r.status] ?? r.status}
                         </span>
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-right">
-                        {r.requestId ? (
-                          <MdChevronRight className="ml-auto text-lg text-gray-400" aria-label="View receipt" />
-                        ) : (
-                          <span className="text-xs text-gray-400">No receipt</span>
-                        )}
                       </td>
                     </tr>
                   ))}
