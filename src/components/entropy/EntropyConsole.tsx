@@ -1,6 +1,7 @@
 "use client";
 
 import InfoBox from "@/components/InfoBox";
+import { receiptsTabHref } from "@/components/receipts/tabs";
 import { EntropyRequestError, requestEntropy, type EntropyResult } from "@/lib/entropy/generate";
 import { sourceDisplayName, type EntropyCatalog } from "@/lib/entropy/modes";
 import { refreshWallet, setWalletBalance } from "@/lib/billing/walletStore";
@@ -99,7 +100,7 @@ export default function EntropyConsole({
           <div className="mt-6">
             <InfoBox>
               All entropy you request in this session will be accessible in{" "}
-              <Link href="/history" className="font-medium text-blue-600 underline hover:text-[var(--brand-primary)]">
+              <Link href={receiptsTabHref("session-history")} className="font-medium text-blue-600 underline hover:text-[var(--brand-primary)]">
                 Session History
               </Link>
               . This history is reset when you close the tab.

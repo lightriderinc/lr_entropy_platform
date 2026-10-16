@@ -68,6 +68,18 @@ export function silentSsoCookieName(appId: string): string {
 }
 
 /**
+ * The page a silent check started from. Logto's negative answer
+ * (`error=login_required`) comes back to /callback without our `returnTo`, so
+ * without this the visitor was sent to "/" instead of back to their page.
+ */
+export function silentReturnCookieName(appId: string): string {
+  return `lr_silent_sso_return_${appId}`;
+}
+
+/** Long enough for one round trip through Logto. */
+export const SILENT_RETURN_COOKIE_SECONDS = 120;
+
+/**
  * Marks that a consent retry has already been attempted (see below), so it can
  * happen at most once per chain and never becomes a cycle.
  */

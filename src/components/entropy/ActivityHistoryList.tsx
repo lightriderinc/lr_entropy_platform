@@ -1,5 +1,6 @@
 "use client";
 
+import { receiptsTabHref } from "@/components/receipts/tabs";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import type { EntropyResult } from "@/lib/entropy/generate";
 import Link from "next/link";
@@ -81,7 +82,7 @@ export default function ActivityHistoryList({
                 </span>
                 {item.receipt.request_id && (
                   <Link
-                    href={`/receipts?request=${encodeURIComponent(item.receipt.request_id)}`}
+                    href={receiptsTabHref("signed-receipts", { request: item.receipt.request_id })}
                     onClick={(e) => e.stopPropagation()}
                     className="mt-2 text-xs font-medium text-blue-600 hover:text-[var(--brand-primary)]"
                   >

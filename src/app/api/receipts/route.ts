@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/receipts?cursor=<drawId>&mode=<mode>&pool=<pool_id>
+ * GET /api/receipts?cursor=<drawId>&mode=<mode>[&mode=...]&pool=<pool_id>[&pool=...]
  * The signed-in user's draws with their receipts, newest first. The user is
  * the server session's Logto id; nothing from the query can widen that.
  */
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const cursor = q.get("cursor");
   try {
     const [page, pools] = await Promise.all([
-      listReceipts(user.sub, { cursor, mode: q.get("mode"), pool: q.get("pool") }),
+      listReceipts(user.sub, { cursor, modes: q.getAll("mode"), pools: q.getAll("pool") }),
       cursor ? Promise.resolve(null) : listReceiptPools(user.sub),
     ]);
     return NextResponse.json({ ...page, pools });

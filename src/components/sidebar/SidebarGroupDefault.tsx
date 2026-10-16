@@ -1,6 +1,7 @@
-import { FaDice } from "react-icons/fa6";
+import { FaDice } from "react-icons/fa";
 import { HiMiniSquare3Stack3D } from "react-icons/hi2";
-import { MdCode, MdHistory, MdReceiptLong, MdRocketLaunch } from "react-icons/md";
+import { MdCode, MdDashboard } from "react-icons/md";
+import { PiReceiptFill } from "react-icons/pi";
 import SidebarNavGroup from "./SidebarNavGroup";
 import SidebarNavItem from "./SidebarNavItem";
 
@@ -15,9 +16,9 @@ export default function SidebarGroupDefault({
     <>
       <SidebarNavGroup label="Entropy">
         <SidebarNavItem
-          name="Getting Started"
+          name="Dashboard"
           href="/"
-          icon={MdRocketLaunch}
+          icon={MdDashboard}
           onNavigate={onNavigate}
         />
         <SidebarNavItem
@@ -27,20 +28,12 @@ export default function SidebarGroupDefault({
           onNavigate={onNavigate}
         />
         {isAuthenticated && (
-          <>
-            <SidebarNavItem
-              name="Receipts"
-              href="/receipts"
-              icon={MdReceiptLong}
-              onNavigate={onNavigate}
-            />
-            <SidebarNavItem
-              name="Session History"
-              href="/history"
-              icon={MdHistory}
-              onNavigate={onNavigate}
-            />
-          </>
+          <SidebarNavItem
+            name="Receipts"
+            href="/receipts"
+            icon={PiReceiptFill}
+            onNavigate={onNavigate}
+          />
         )}
       </SidebarNavGroup>
 

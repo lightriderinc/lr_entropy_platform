@@ -1,10 +1,15 @@
 // Serving modes offered on Get Entropy, shared by the console (client) and
-// the /api/entropy route (server). Pure data: no client or server imports.
+// the /api/entropy route (server). Pure data: no client or server imports
+// (icons are component references, rendered by the client).
 //
 //   pool   - an EMS tier pool. Several collectors feed each one, so a draw
 //            says which sources contributed only via the receipt.
 //   custom - a blend of 2-8 sources the user picks (EMS /v1/entropy/multi).
 //   source - one source only, from its own ring (EMS /v1/entropy/source/:id).
+
+import type { IconType } from "react-icons";
+import { MdFlashOn, MdOutlineDiamond } from "react-icons/md";
+import { RiAtomLine } from "react-icons/ri";
 
 export type EntropyMode = "pool" | "custom" | "source" | "card";
 
@@ -14,6 +19,7 @@ export interface PoolOption {
   policy: string;
   name: string;
   description: string;
+  icon: IconType;
 }
 
 export const POOL_OPTIONS: PoolOption[] = [
@@ -23,6 +29,7 @@ export const POOL_OPTIONS: PoolOption[] = [
     policy: "fastest_available",
     name: "Fastest pool",
     description: "Shared pool fed by local and fast sources. Lowest latency.",
+    icon: MdFlashOn,
   },
   {
     id: "highest_quality",
@@ -30,6 +37,7 @@ export const POOL_OPTIONS: PoolOption[] = [
     policy: "highest_quality",
     name: "Highest-quality pool",
     description: "Shared pool fed by quantum RNG services and hardware backstops.",
+    icon: MdOutlineDiamond,
   },
   {
     id: "quantum_verified",
@@ -37,6 +45,7 @@ export const POOL_OPTIONS: PoolOption[] = [
     policy: "quantum_verified",
     name: "Quantum-verified pool",
     description: "Shared pool fed by quantum processors and quantum RNGs.",
+    icon: RiAtomLine,
   },
 ];
 
