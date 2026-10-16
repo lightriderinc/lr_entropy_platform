@@ -161,13 +161,13 @@ export type ReceiptRow = {
 
 export async function listReceipts(
   userSub: string,
-  opts: { cursor?: string | null; mode?: string | null; pool?: string | null },
+  opts: { cursor?: string | null; modes?: string[]; pools?: string[] },
 ): Promise<{ rows: ReceiptRow[]; nextCursor: string | null }> {
   const where: Prisma.DrawWhereInput = {
     logtoUserId: userSub,
     status: { in: LISTED_STATUSES },
-    ...(opts.mode ? { mode: opts.mode } : {}),
-    ...(opts.pool ? { receipt: { is: { poolId: opts.pool, logtoUserId: userSub } } } : {}),
+    ...(opts.modes?.length ? { mode: { in: opts.modes } } : {}),
+    ...(opts.pools?.length ? { receipt: { is: { poolId: { in: opts.pools }, logtoUserId: userSub } } } : {}),
   };
   // The cursor is a draw id; only honoured if it is one of this user's draws.
   const cursorOk =

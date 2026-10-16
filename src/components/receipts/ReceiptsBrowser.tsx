@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { MdChevronRight } from "react-icons/md";
+import { TbReceipt } from "react-icons/tb";
+import FilterBar, { type FilterGroup } from "@/components/ui/FilterBar";
 import { formatCredits } from "@/lib/entropy/pricing";
 import { sourceDisplayName } from "@/lib/entropy/modes";
 import ReceiptDetail from "./ReceiptDetail";
@@ -20,23 +23,44 @@ type Row = {
 
 type Page = { rows: Row[]; nextCursor: string | null; pools: string[] | null };
 
-async function fetchPage(params: { cursor?: string | null; mode: string; pool: string }): Promise<Page> {
+type FilterKey = "mode" | "pool";
+type Filters = Record<FilterKey, Set<string>>;
+
+const emptyFilters = (): Filters => ({ mode: new Set(), pool: new Set() });
+
+async function fetchPage(params: { cursor?: string | null; filters: Filters }): Promise<Page> {
   const q = new URLSearchParams();
   if (params.cursor) q.set("cursor", params.cursor);
-  if (params.mode) q.set("mode", params.mode);
-  if (params.pool) q.set("pool", params.pool);
+  params.filters.mode.forEach((m) => q.append("mode", m));
+  params.filters.pool.forEach((p) => q.append("pool", p));
   const res = await fetch(`/api/receipts?${q}`, { cache: "no-store" });
   if (!res.ok) throw new Error(String(res.status));
   return res.json();
 }
 
-const selectClass =
-  "default-radius border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[var(--brand-primary)]";
+const HEADERS = ["Time", "Mode", "Pool", "Sources", "Bytes", "Charged", "Status", ""];
+
+const STATUS_STYLES: Record<string, string> = {
+  delivered: "bg-emerald-600 text-white",
+  settled: "bg-emerald-600 text-white",
+  failed: "bg-gray-100 text-gray-600",
+};
+
+function RowSkeleton() {
+  return (
+    <tr className="border-b border-gray-100 last:border-0">
+      {HEADERS.map((_, i) => (
+        <td key={i} className="px-4 py-3">
+          <div className="h-4 w-16 rounded bg-gray-100" />
+        </td>
+      ))}
+    </tr>
+  );
+}
 
 /** The signed-in user's receipts: newest first, filterable, paged. */
 export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId: string | null }) {
-  const [mode, setMode] = useState("");
-  const [pool, setPool] = useState("");
+  const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [pools, setPools] = useState<string[]>([]);
   const [rows, setRows] = useState<Row[]>([]);
   const [next, setNext] = useState<string | null>(null);
@@ -44,8 +68,8 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
   const [loadingMore, setLoadingMore] = useState(false);
   const [open, setOpen] = useState<string | null>(initialRequestId);
 
-  const load = useCallback((m: string, p: string) => {
-    fetchPage({ mode: m, pool: p })
+  const load = useCallback((f: Filters) => {
+    fetchPage({ filters: f })
       .then((page) => {
         setRows(page.rows);
         setNext(page.nextCursor);
@@ -56,21 +80,30 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
   }, []);
 
   useEffect(() => {
-    load("", "");
+    load(emptyFilters());
   }, [load]);
 
-  function applyFilter(nextMode: string, nextPool: string) {
-    setMode(nextMode);
-    setPool(nextPool);
+  function applyFilters(nextFilters: Filters) {
+    setFilters(nextFilters);
     setState("loading");
-    load(nextMode, nextPool);
+    load(nextFilters);
+  }
+
+  function toggleFilter(group: FilterKey, value: string) {
+    const values = new Set(filters[group]);
+    if (values.has(value)) {
+      values.delete(value);
+    } else {
+      values.add(value);
+    }
+    applyFilters({ ...filters, [group]: values });
   }
 
   async function loadMore() {
     if (!next) return;
     setLoadingMore(true);
     try {
-      const page = await fetchPage({ cursor: next, mode, pool });
+      const page = await fetchPage({ cursor: next, filters });
       setRows((r) => [...r, ...page.rows]);
       setNext(page.nextCursor);
     } catch {
@@ -80,100 +113,134 @@ export default function ReceiptsBrowser({ initialRequestId }: { initialRequestId
     }
   }
 
+  const filterGroups: FilterGroup<FilterKey>[] = [
+    {
+      key: "mode",
+      label: "Mode",
+      options: Object.entries(MODE_LABELS).map(([value, label]) => ({ value, label })),
+    },
+    { key: "pool", label: "Pool", options: pools.map((p) => ({ value: p, label: p })) },
+  ];
+  const hasFilters = filters.mode.size > 0 || filters.pool.size > 0;
+
   return (
-    <div className="default-radius border border-gray-50 bg-gray-50 p-5">
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-gray-500">
-          Mode
-          <select className={selectClass} value={mode} onChange={(e) => applyFilter(e.target.value, pool)}>
-            <option value="">All modes</option>
-            {Object.entries(MODE_LABELS).map(([id, label]) => (
-              <option key={id} value={id}>{label}</option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-xs text-gray-500">
-          Pool
-          <select className={selectClass} value={pool} onChange={(e) => applyFilter(mode, e.target.value)}>
-            <option value="">All pools</option>
-            {pools.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-        </label>
+    <div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <span className="text-md text-gray-950">
+          {state === "ready" &&
+            `${rows.length}${next ? "+" : ""} ${rows.length === 1 && !next ? "Receipt" : "Receipts"}`}
+        </span>
+        <FilterBar
+          label="Filter receipts"
+          groups={filterGroups}
+          filters={filters}
+          onToggle={toggleFilter}
+          onClearGroup={(group) => applyFilters({ ...filters, [group]: new Set() })}
+          onClearAll={() => applyFilters(emptyFilters())}
+        />
       </div>
 
-      {state === "loading" && <p className="mt-4 h-24 animate-pulse rounded bg-gray-200" />}
-      {state === "error" && <p className="mt-4 text-sm text-[var(--brand-primary)]">Receipts could not be loaded right now.</p>}
-      {state === "ready" && rows.length === 0 && (
-        <p className="mt-4 text-sm text-gray-500">No receipts yet. Every draw you make is listed here with its signed receipt.</p>
+      {state === "error" && (
+        <p className="text-sm text-red-500">Receipts could not be loaded right now.</p>
       )}
-      {state === "ready" && rows.length > 0 && (
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-gray-400">
-                <th className="py-2 pr-3 font-medium">Time</th>
-                <th className="py-2 pr-3 font-medium">Mode</th>
-                <th className="py-2 pr-3 font-medium">Pool</th>
-                <th className="py-2 pr-3 font-medium">Sources</th>
-                <th className="py-2 pr-3 text-right font-medium">Bytes</th>
-                <th className="py-2 pr-3 text-right font-medium">Charged</th>
-                <th className="py-2 pr-3 font-medium">Status</th>
-                <th className="py-2 font-medium" />
+
+      {state === "ready" && rows.length === 0 && (
+        <div className="default-radius border border-dashed border-gray-200 bg-gray-50 p-16 text-center text-sm text-gray-500">
+          <div className="mb-3 flex items-center justify-center text-6xl text-gray-200">
+            <TbReceipt />
+          </div>
+          {hasFilters
+            ? "No receipts match the selected filters."
+            : "No receipts yet. Every draw you make is listed here with its signed receipt."}
+        </div>
+      )}
+
+      {(state === "loading" || (state === "ready" && rows.length > 0)) && (
+        <div className="overflow-x-auto default-radius border border-gray-100">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-gray-100">
+              <tr>
+                {HEADERS.map((h, i) => (
+                  <th
+                    key={i}
+                    className={[
+                      "whitespace-nowrap px-4 py-2 font-medium text-gray-700",
+                      h === "Bytes" || h === "Charged" ? "text-right" : "",
+                    ].join(" ")}
+                  >
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.drawId} className="border-t border-gray-100 align-top">
-                  <td className="py-2 pr-3 whitespace-nowrap text-gray-500">{new Date(r.createdAt).toLocaleString()}</td>
-                  <td className="py-2 pr-3 text-gray-700">{MODE_LABELS[r.mode] ?? r.mode}</td>
-                  <td className="py-2 pr-3 font-mono text-xs text-gray-600">{r.poolId ?? "—"}</td>
-                  <td className="py-2 pr-3 text-gray-600">
-                    {r.contributingSources.length > 0 ? r.contributingSources.map(sourceDisplayName).join(", ") : "—"}
-                  </td>
-                  <td className="py-2 pr-3 text-right text-gray-700">{r.bytes.toLocaleString()}</td>
-                  <td className="py-2 pr-3 text-right text-gray-700">
-                    {r.status === "failed" ? "Not charged" : formatCredits(r.costTokens)}
-                  </td>
-                  <td className="py-2 pr-3">
-                    <span
+            <tbody className={state === "loading" ? "animate-pulse" : undefined}>
+              {state === "loading"
+                ? Array.from({ length: 5 }).map((_, i) => <RowSkeleton key={i} />)
+                : rows.map((r) => (
+                    <tr
+                      key={r.drawId}
+                      onClick={r.requestId ? () => setOpen(r.requestId) : undefined}
                       className={[
-                        "inline-block default-radius px-1.5 py-0.5 text-xs font-medium",
-                        r.status === "failed" ? "bg-gray-100 text-gray-600" : "bg-green-50 text-green-700",
+                        "border-b border-gray-100 bg-white transition-colors last:border-0",
+                        r.requestId ? "cursor-pointer hover:bg-gray-50" : "",
                       ].join(" ")}
                     >
-                      {STATUS_LABELS[r.status] ?? r.status}
-                    </span>
-                  </td>
-                  <td className="py-2 text-right">
-                    {r.requestId ? (
-                      <button
-                        type="button"
-                        onClick={() => setOpen(r.requestId)}
-                        className="text-sm font-medium text-blue-600 hover:text-[var(--brand-primary)] cursor-pointer"
-                      >
-                        View
-                      </button>
-                    ) : (
-                      <span className="text-xs text-gray-400">No receipt</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
+                        {new Date(r.createdAt).toLocaleString()}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="rounded bg-zinc-600 px-2.5 py-0.5 text-xs font-medium text-white">
+                          {MODE_LABELS[r.mode] ?? r.mode}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-500">
+                        {r.poolId ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {r.contributingSources.length > 0
+                          ? r.contributingSources.map(sourceDisplayName).join(", ")
+                          : "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                        {r.bytes.toLocaleString()}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700">
+                        {r.status === "failed" ? "Not charged" : formatCredits(r.costTokens)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span
+                          className={`inline-flex items-center rounded px-2.5 py-0.5 text-xs font-medium ${
+                            STATUS_STYLES[r.status] ?? "bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {STATUS_LABELS[r.status] ?? r.status}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right">
+                        {r.requestId ? (
+                          <MdChevronRight className="ml-auto text-lg text-gray-400" aria-label="View receipt" />
+                        ) : (
+                          <span className="text-xs text-gray-400">No receipt</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
             </tbody>
           </table>
         </div>
       )}
+
       {next && state === "ready" && (
-        <button
-          type="button"
-          onClick={loadMore}
-          disabled={loadingMore}
-          className="mt-3 text-sm font-medium text-blue-600 hover:text-[var(--brand-primary)] cursor-pointer"
-        >
-          {loadingMore ? "Loading…" : "Load more"}
-        </button>
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="default-radius border border-gray-100 bg-white px-3 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-50 cursor-pointer disabled:cursor-default"
+          >
+            {loadingMore ? "Loading…" : "Load more"}
+          </button>
+        </div>
       )}
 
       {open && <ReceiptDetail requestId={open} onClose={() => setOpen(null)} />}
