@@ -7,7 +7,7 @@ export default async function SourcesPage() {
   return (
     <div>
       <div className="mb-12">
-        <h1 className="text-2xl font-semibold text-gray-700 mb-2">
+        <h1 className="text-2xl font-semibold text-gray-700">
           Entropy Sources
         </h1>
         <p className="text-sm text-gray-500">
