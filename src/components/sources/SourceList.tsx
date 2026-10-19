@@ -1,5 +1,5 @@
 import type { DirectorySource } from "@/lib/sources/filters";
-import { PolicyTag, SourceStatus } from "./SourceStatus";
+import { SourceStatus, SourceTagBadge } from "./SourceStatus";
 
 export default function SourceList({ sources }: { sources: DirectorySource[] }) {
   return (
@@ -9,7 +9,7 @@ export default function SourceList({ sources }: { sources: DirectorySource[] }) 
           <tr>
             <th className="whitespace-nowrap px-4 py-2 font-medium text-gray-700">Name</th>
             <th className="whitespace-nowrap px-4 py-2 font-medium text-gray-700">Type</th>
-            <th className="whitespace-nowrap px-4 py-2 font-medium text-gray-700">Policy</th>
+            <th className="whitespace-nowrap px-4 py-2 font-medium text-gray-700">Tag</th>
             <th className="whitespace-nowrap px-4 py-2 font-medium text-gray-700">Status</th>
           </tr>
         </thead>
@@ -27,7 +27,7 @@ export default function SourceList({ sources }: { sources: DirectorySource[] }) 
                 </td>
                 <td className="px-4 py-3 text-gray-700">{s.type}</td>
                 <td className="whitespace-nowrap px-4 py-3">
-                  <PolicyTag policy={s.policy} />
+                  <SourceTagBadge tag={s.tag} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <SourceStatus source={s} />

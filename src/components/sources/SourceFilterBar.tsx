@@ -5,12 +5,12 @@ import type { SourceFilterGroup, SourceFilterState } from "@/lib/sources/filters
 
 const FILTER_GROUPS: FilterGroup<SourceFilterGroup>[] = [
   {
-    key: "policy",
-    label: "Policy",
+    key: "tag",
+    label: "Tag",
     options: [
-      { value: "highest-quality", label: "Highest quality" },
-      { value: "quantum-verified", label: "Quantum verified" },
-      { value: "fastest", label: "Fastest" },
+      { value: "QPU", label: "QPU" },
+      { value: "QRNG", label: "QRNG" },
+      { value: "Hardware RNG", label: "Hardware RNG" },
     ],
   },
   {

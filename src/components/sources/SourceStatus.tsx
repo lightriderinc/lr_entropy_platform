@@ -1,21 +1,17 @@
 import ComingSoonTag from "@/components/ui/ComingSoonTag";
+import type { SourceTag } from "@/lib/entropy/modes";
 import type { DirectorySource } from "@/lib/sources/filters";
 
-export const POLICY_LABEL: Record<string, string> = {
-  "highest-quality": "Highest quality",
-  "quantum-verified": "Quantum verified",
-  fastest: "Fastest",
+const TAG_CLASS: Record<SourceTag, string> = {
+  QPU: "text-purple-700 border border-purple-600 bg-purple-100",
+  QRNG: "text-blue-700 border border-blue-600 bg-blue-50",
+  "Hardware RNG": "text-emerald-600 border border-emerald-600 bg-emerald-50",
+  Beacon: "text-amber-700 border border-amber-600 bg-amber-50",
 };
 
-const POLICY_CLASS: Record<string, string> = {
-  "highest-quality": "text-purple-700 border border-purple-600 bg-purple-100",
-  "quantum-verified": "text-blue-700 border border-blue-600 bg-blue-50",
-  fastest: "text-emerald-600 border border-emerald-600 bg-emerald-50",
-};
-
-export function PolicyTag({ policy, muted = false }: { policy: string; muted?: boolean }) {
-  const cls = muted ? "text-gray-400 border border-gray-200 bg-gray-50" : POLICY_CLASS[policy] ?? POLICY_CLASS.fastest;
-  return <span className={`text-xs font-medium px-2 py-0.5 rounded ${cls}`}>{POLICY_LABEL[policy] ?? policy}</span>;
+export function SourceTagBadge({ tag, muted = false }: { tag: SourceTag; muted?: boolean }) {
+  const cls = muted ? "text-gray-400 border border-gray-200 bg-gray-50" : TAG_CLASS[tag];
+  return <span className={`text-xs font-medium px-2 py-0.5 rounded ${cls}`}>{tag}</span>;
 }
 
 function Dot({ label, dot, text }: { label: string; dot: string; text: string }) {

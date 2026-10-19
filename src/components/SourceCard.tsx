@@ -1,4 +1,4 @@
-import { PolicyTag, SourceStatus } from "@/components/sources/SourceStatus";
+import { SourceStatus, SourceTagBadge } from "@/components/sources/SourceStatus";
 import type { DirectorySource } from "@/lib/sources/filters";
 import TiltCard from "./ui/TiltCard";
 
@@ -22,7 +22,7 @@ export default function SourceCard({ source }: { source: DirectorySource }) {
         </p>
       </div>
       <div className="flex">
-        <PolicyTag policy={source.policy} />
+        <SourceTagBadge tag={source.tag} />
       </div>
     </>
   );
