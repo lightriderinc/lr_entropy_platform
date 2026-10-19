@@ -73,7 +73,7 @@ export default function SourceCatalog({ sources }: { sources: DirectorySource[] 
     <>
       <div className="mb-6 flex items-center justify-between">
         <span className="text-md text-gray-950">
-          {availableCount} Available{comingSoonCount > 0 && `, ${comingSoonCount} Coming soon`}
+          {availableCount} Sources
         </span>
 
         <div className="flex items-center gap-3">
