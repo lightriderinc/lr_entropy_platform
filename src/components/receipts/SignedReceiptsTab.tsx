@@ -14,13 +14,11 @@ export default function SignedReceiptsTab({
   return (
     <div>
       <p className="mb-4 text-sm text-gray-600">
-        A signed receipt for every draw: which pool and sources served it, its
-        quality checks, and what it cost.
+        A signed receipt for every draw.
       </p>
       <div className="mb-4">
         <InfoBox>
-          Receipts are kept for your account. The entropy bytes themselves are
-          never stored: copy or download them when you generate them.
+          Receipts are kept for every entropy request you make, and do NOT include the generated entropy itself.
         </InfoBox>
       </div>
 
