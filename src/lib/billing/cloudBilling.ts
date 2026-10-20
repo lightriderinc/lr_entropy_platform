@@ -216,3 +216,29 @@ export const apiKeyAccount = {
   rotate: () => call<{ key?: string; keyPrefix?: string; error?: string }>("POST", "/api/internal/entropy/api-key/rotate", {}),
   revoke: () => call<{ revoked?: boolean; error?: string }>("DELETE", "/api/internal/entropy/api-key"),
 };
+
+/**
+ * Share Credits on cloud. PROPOSED endpoints: cloud does not serve these yet,
+ * and their final shape is still to be agreed with the cloud team. They are
+ * only called when ENTROPY_TRANSFER_SEND / ENTROPY_TRANSFER_HISTORY are set to
+ * "cloud" (lib/billing/transfers.ts), so nothing hits them until then.
+ * Authenticated like the wallet: the shared secret plus the user's own token.
+ */
+export const transferAccount = {
+  send: (rows: { email: string; credits: number }[], idempotencyKey: string, email?: string) =>
+    call<Record<string, unknown>>(
+      "POST",
+      "/api/internal/entropy/transfer",
+      { rows, idempotencyKey, email },
+      { kind: "user" },
+      [404],
+    ),
+  history: (view: "sent" | "received", cursor?: string | null) =>
+    call<Record<string, unknown>>(
+      "GET",
+      `/api/internal/entropy/transfers?view=${view}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
+      undefined,
+      { kind: "user" },
+      [404],
+    ),
+};
