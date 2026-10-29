@@ -218,11 +218,16 @@ export const apiKeyAccount = {
 };
 
 /**
- * Share Credits on cloud. PROPOSED endpoints: cloud does not serve these yet,
- * and their final shape is still to be agreed with the cloud team. They are
- * only called when ENTROPY_TRANSFER_SEND / ENTROPY_TRANSFER_HISTORY are set to
- * "cloud" (lib/billing/transfers.ts), so nothing hits them until then.
- * Authenticated like the wallet: the shared secret plus the user's own token.
+ * Share Credits on cloud. Authenticated like the wallet: the shared secret
+ * plus the user's own token.
+ *
+ * send: served by Light Rider Cloud's /api/internal/entropy/transfer, which
+ *   answers exactly like its own /api/billing/credits/transfer. 404 (a
+ *   deployment without the endpoint) and 500 (Cloud's handled failures carry a
+ *   user-facing message) are returned rather than thrown; lib/billing/transfers.ts
+ *   decides what each means.
+ * history: PROPOSED, not served by Cloud yet; only called when
+ *   ENTROPY_TRANSFER_HISTORY=cloud, and a 404 falls back to the wallet ledger.
  */
 export const transferAccount = {
   send: (rows: { email: string; credits: number }[], idempotencyKey: string, email?: string) =>
@@ -231,7 +236,7 @@ export const transferAccount = {
       "/api/internal/entropy/transfer",
       { rows, idempotencyKey, email },
       { kind: "user" },
-      [404],
+      [404, 500],
     ),
   history: (view: "sent" | "received", cursor?: string | null) =>
     call<Record<string, unknown>>(

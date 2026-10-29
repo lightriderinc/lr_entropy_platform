@@ -1,4 +1,4 @@
-import { cloudBilling, isBillingDisabledForDev, transferAccount } from "./cloudBilling";
+import { BillingUnavailableError, cloudBilling, isBillingDisabledForDev, transferAccount } from "./cloudBilling";
 import {
   MAX_TRANSFER_ROWS,
   type TransferHistoryPage,
@@ -9,26 +9,20 @@ import {
 
 // Share Credits backend, server-only. The UI only ever talks to this app's
 // /api/billing/transfers route, whose request/response shapes are fixed in
-// transferTypes.ts. WHERE those calls are served is chosen here, per half, by
-// env, so the backend can change without touching the page:
+// transferTypes.ts.
 //
-//   ENTROPY_TRANSFER_SEND     "cloud" -> POST cloud /api/internal/entropy/transfer
-//                             anything else (default) -> sending is unavailable
-//   ENTROPY_TRANSFER_HISTORY  "cloud" -> GET cloud /api/internal/entropy/transfers
-//                             anything else (default) -> "ledger": read from the
-//                             shared wallet ledger this app already gets
-//
+// Sending always goes to Light Rider Cloud, behind the internal secret + user
+// token:
+//   POST /api/internal/entropy/transfer  { rows: [{ email, credits }], idempotencyKey, email? }
+//     -> exactly what Cloud's own POST /api/billing/credits/transfer returns
 // Sending moves money between two wallets that live in cloud's database, so
 // it can only happen on cloud: there is no local fallback for it, by design.
-// Adding another backend (e.g. a dedicated billing service) is one more
-// branch in sendBackend() / historyBackend().
 //
-// Expected cloud contract (to agree with the cloud team) - the same as cloud's
-// own session routes, behind the internal secret + user token:
-//   POST /api/internal/entropy/transfer  { rows: [{ email, credits }], idempotencyKey, email? }
-//     -> exactly what POST /api/billing/credits/transfer returns today
-//   GET  /api/internal/entropy/transfers?view=sent|received&cursor=<ledgerEntryId>
-//     -> { view, transfers: [{ id, amountCents (positive), counterpartyEmail, reason, createdAt }], nextCursor }
+// History is chosen by env:
+//   ENTROPY_TRANSFER_HISTORY  "cloud" -> GET cloud /api/internal/entropy/transfers
+//                             (not served by Cloud yet; falls back to the ledger)
+//                             anything else (default) -> "ledger": read from the
+//                             shared wallet ledger this app already gets
 
 export type SendOutcome = { status: number; body: Record<string, unknown> };
 
@@ -47,8 +41,7 @@ const HISTORY_PAGE_SIZE = 10;
 const LEDGER_SCAN_PAGES = 10;
 
 function sendBackend(): "cloud" | "off" {
-  if (isBillingDisabledForDev()) return "off";
-  return process.env.ENTROPY_TRANSFER_SEND === "cloud" ? "cloud" : "off";
+  return isBillingDisabledForDev() ? "off" : "cloud";
 }
 
 function historyBackend(): "cloud" | "ledger" | "none" {
@@ -84,8 +77,15 @@ export async function sendTransfers(
   });
 
   const r = await transferAccount.send(clean, idempotencyKey, senderEmail);
-  // Cloud hasn't deployed the endpoint yet: same answer as "switched off".
+  // CLOUD_BILLING_URL still points at a deployment without the endpoint (e.g.
+  // the Quantum app before the switch-over): same answer as "switched off".
   if (r.status === 404) return UNAVAILABLE;
+  // Cloud answers its own handled failures (e.g. a recipient lookup that
+  // failed) with a 500 and a user-facing message: pass that through so this
+  // page shows exactly what Cloud's page does. A bare 500 is an outage.
+  if (r.status >= 500 && typeof r.data.message !== "string") {
+    throw new BillingUnavailableError(`Billing API /api/internal/entropy/transfer returned ${r.status}`);
+  }
   return { status: r.status, body: r.data };
 }
 

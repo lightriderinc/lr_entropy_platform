@@ -3,7 +3,9 @@
 // in a server component and pass it down.
 //
 // The Cloud origin is taken from CLOUD_BILLING_URL (the billing API lives on
-// Cloud itself), the same way /settings/api-keys always has.
+// Cloud itself). Only link to pages Cloud actually has: today that is
+// /settings/payment-and-history. Cloud has no API keys page — keys are managed
+// on this app's own /settings/api-keys.
 
 /** Absolute URL of a Cloud platform page, or null when no Cloud origin is configured. */
 export function cloudPlatformUrl(path: string): string | null {

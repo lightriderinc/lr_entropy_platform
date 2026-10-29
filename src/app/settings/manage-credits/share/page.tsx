@@ -4,7 +4,6 @@ import TransferHistory from "@/components/billing/TransferHistory";
 import WalletAutoRefresh from "@/components/billing/WalletAutoRefresh";
 import BackButton from "@/components/ui/BackButton";
 import { getSession } from "@/lib/auth/session";
-import { cloudPlatformUrl } from "@/lib/billing/cloudLinks";
 import { transferCapabilities } from "@/lib/billing/transfers";
 
 export const metadata = { title: "Share Credits" };
@@ -29,10 +28,7 @@ export default async function ShareCreditsPage() {
       <WalletAutoRefresh />
       <div className="flex flex-col gap-12">
         <div className="block lg:flex lg:max-w-[700px]">
-          <ShareCredits
-            canSend={canSend}
-            cloudShareUrl={canSend ? null : cloudPlatformUrl("/settings/manage-credits/share")}
-          />
+          <ShareCredits canSend={canSend} />
         </div>
         <div>
           <h2 className="mb-4 text-xl font-semibold text-gray-600">Transfer history</h2>

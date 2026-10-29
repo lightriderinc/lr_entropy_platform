@@ -1,6 +1,5 @@
 "use client";
 
-import InfoBox from "@/components/InfoBox";
 import WarningBox from "@/components/WarningBox";
 import LRButton from "@/components/ui/LRButton";
 import ModalShell from "@/components/ui/ModalShell";
@@ -15,7 +14,7 @@ import {
 import { refreshWallet, useWallet } from "@/lib/billing/walletStore";
 import { formatCredits } from "@/lib/entropy/pricing";
 import { useCallback, useEffect, useState } from "react";
-import { MdAdd, MdArrowOutward, MdClose } from "react-icons/md";
+import { MdAdd, MdClose } from "react-icons/md";
 
 /**
  * Send credits to one or more Light Rider users by email. Ported from the
@@ -25,9 +24,9 @@ import { MdAdd, MdArrowOutward, MdClose } from "react-icons/md";
  * the submit goes through a review step listing every recipient and the total
  * before anything is sent. Amounts are whole credits (1 credit = 1 cent).
  *
- * Talks only to this app's /api/billing/transfers. Which backend actually
- * moves the credits is decided server-side (lib/billing/transfers.ts); while
- * none is enabled, `canSend` is false and the form is shown read-only.
+ * Talks only to this app's /api/billing/transfers, which sends through Light
+ * Rider Cloud (lib/billing/transfers.ts). `canSend` is false only in local
+ * development with ENTROPY_BILLING=off, where there is no wallet to send from.
  */
 
 type FormRow = { id: string; email: string; amount: string };
@@ -58,11 +57,8 @@ async function postBatch(rows: TransferRowInput[], idempotencyKey: string): Prom
 
 export default function ShareCredits({
   canSend,
-  cloudShareUrl,
 }: {
   canSend: boolean;
-  /** Cloud's Share Credits page, offered while sending is unavailable here. */
-  cloudShareUrl: string | null;
 }) {
   const wallet = useWallet();
   const [rows, setRows] = useState<FormRow[]>([blankRow()]);
@@ -176,28 +172,6 @@ export default function ShareCredits({
           )}
         </div>
       </div>
-
-      {!canSend && (
-        <div className="mt-6">
-          <InfoBox>
-            Sending credits from the Entropy platform isn&apos;t available yet. Your transfer history below is up to
-            date.
-            {cloudShareUrl && (
-              <>
-                {" "}
-                <a
-                  href={cloudShareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-0.5 font-medium text-blue-700 underline"
-                >
-                  Send from Light Rider Cloud <MdArrowOutward />
-                </a>
-              </>
-            )}
-          </InfoBox>
-        </div>
-      )}
 
       <form onSubmit={handleReview}>
         <fieldset disabled={!canSend} className="disabled:opacity-60">
@@ -412,7 +386,7 @@ function RowResults({ rows }: { rows: TransferRowResult[] }) {
         if (row.status === "recipient_not_found") {
           return (
             <li key={i} className="default-radius border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              {row.email} doesn&apos;t have a Light Rider account yet.
+              {row.email} doesn&apos;t have an account yet. Invite them instead.
             </li>
           );
         }
