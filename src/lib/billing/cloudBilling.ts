@@ -162,6 +162,9 @@ export const cloudBilling = {
       returnOrigin,
       email,
     }),
+  /** Stripe Customer Portal for the same Customer; returns to this app's Payment & History. */
+  portal: (returnOrigin: string) =>
+    call<{ url?: string; error?: string }>("POST", "/api/internal/entropy/portal", { returnOrigin }),
 };
 
 export type ResolvedApiKey = { logtoUserId?: string; keyPrefix?: string; rateLimitPerMinute?: number; error?: string; retryAfterSeconds?: number };

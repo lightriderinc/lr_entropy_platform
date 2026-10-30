@@ -3,7 +3,6 @@ import PaymentMethodCard from "@/components/billing/PaymentMethodCard";
 import UsageHistory from "@/components/billing/UsageHistory";
 import WalletAutoRefresh from "@/components/billing/WalletAutoRefresh";
 import { getSession } from "@/lib/auth/session";
-import { cloudPlatformUrl } from "@/lib/billing/cloudLinks";
 
 export const metadata = { title: "Payment & History" };
 
@@ -25,7 +24,7 @@ export default async function PaymentAndHistoryPage() {
 
       <WalletAutoRefresh />
       <div className="flex flex-col gap-4">
-        <PaymentMethodCard manageUrl={cloudPlatformUrl("/settings/payment-and-history")} />
+        <PaymentMethodCard />
         <UsageHistory />
       </div>
     </div>
