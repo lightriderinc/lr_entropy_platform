@@ -3,7 +3,7 @@
 import type { EntropyMode } from "@/lib/entropy/modes";
 
 export const MODE_TABS: { id: EntropyMode; label: string; hint: string }[] = [
-  { id: "pool", label: "Pools", hint: "Draw from a tier pool of several sources." },
+  { id: "pool", label: "Preset pool", hint: "Draw from a tier pool of several sources." },
   { id: "custom", label: "Custom pool", hint: "Draw from one source, or a blend of several you pick." },
 ];
 

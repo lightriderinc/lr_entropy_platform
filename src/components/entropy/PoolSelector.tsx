@@ -13,7 +13,7 @@ export default function PoolSelector({
   return (
     <div className="flex flex-col gap-2">
       <label className="block text-md font-semibold text-gray-400 mb-1">
-        Entropy pool
+        Select a pool
       </label>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">

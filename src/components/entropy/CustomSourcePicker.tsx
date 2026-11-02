@@ -89,10 +89,10 @@ export default function CustomSourcePicker({
   return (
     <div className="flex flex-col gap-2">
       <label className="block text-md font-semibold text-gray-400 mb-1">
-        Entropy sources
+        Select sources
       </label>
       <p className="text-xs text-gray-500">
-        {picked.length} of up to {MAX_CUSTOM_SOURCES} selected. Pick one source
+        {picked.length} of up to {MAX_CUSTOM_SOURCES} selected. Pick a single source
         to draw from it alone, or several to blend them.
       </p>
       {cards.length === 0 && (
