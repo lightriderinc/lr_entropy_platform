@@ -13,6 +13,8 @@ interface EntropySourceCardProps {
   selected: boolean;
   /** Coming soon: greyed out, not selectable, tagged. */
   disabled?: boolean;
+  /** Greyed out and not selectable right now (e.g. empty), without the coming-soon tag. */
+  unavailable?: boolean;
   /** Optional status line under the description (e.g. live ring state). */
   badge?: React.ReactNode;
   onSelect: () => void;
@@ -25,19 +27,23 @@ export default function EntropySourceCard({
   tag,
   selected,
   disabled = false,
+  unavailable = false,
   badge,
   onSelect,
 }: EntropySourceCardProps) {
   return (
     <button
       type="button"
-      disabled={disabled}
-      aria-disabled={disabled}
+      disabled={disabled || unavailable}
+      aria-disabled={disabled || unavailable}
+      aria-pressed={selected}
       onClick={onSelect}
       className={[
         "relative text-left w-full p-4 default-radius border transition-all duration-150",
         disabled
           ? "cursor-not-allowed bg-gray-50 border-gray-100"
+          : unavailable
+            ? "cursor-not-allowed bg-gray-50 border-gray-100 opacity-60"
           : selected
             ? "cursor-pointer border-[var(--brand-primary)] bg-red-50 shadow-sm"
             : "cursor-pointer border-gray-100 bg-white card-hover-primary",

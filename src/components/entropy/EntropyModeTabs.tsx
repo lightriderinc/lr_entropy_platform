@@ -4,9 +4,7 @@ import type { EntropyMode } from "@/lib/entropy/modes";
 
 export const MODE_TABS: { id: EntropyMode; label: string; hint: string }[] = [
   { id: "pool", label: "Pools", hint: "Draw from a tier pool of several sources." },
-  { id: "custom", label: "Custom pool", hint: "Draw from a custom blend of pools and sources." },
-  { id: "source", label: "Single source", hint: "Draw from the dedicated pool of a single source." },
-  { id: "card", label: "Source cards", hint: "Draw from the shared tier pool of each source." },
+  { id: "custom", label: "Custom pool", hint: "Draw from one source, or a blend of several you pick." },
 ];
 
 export default function EntropyModeTabs({

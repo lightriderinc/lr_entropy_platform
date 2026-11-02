@@ -7,12 +7,10 @@ import {
   MIN_CUSTOM_SOURCES,
   POOL_OPTIONS,
   SINGLE_SOURCE_OPTIONS,
-  singleSourceDrawId,
   sourceDisplayName,
   type EntropyCatalog,
   type EntropyMode,
 } from "@/lib/entropy/modes";
-import type { Source } from "@/lib/sources/filters";
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useWallet } from "@/lib/billing/walletStore";
@@ -21,14 +19,7 @@ import { MdArrowForward } from "react-icons/md";
 import CustomSourcePicker, { CatalogSkeleton } from "./CustomSourcePicker";
 import EntropyByteCountInput from "./EntropyByteCountInput";
 import EntropyModeTabs from "./EntropyModeTabs";
-import EntropySourceSelector, {
-  EntropySourceSelectorSkeleton,
-  type EntropySource,
-} from "./EntropySourceSelector";
 import PoolSelector from "./PoolSelector";
-import { QEC_MODES } from "./QecModeSelector";
-import QecPanel from "./QecPanel";
-import SingleSourceSelector from "./SingleSourceSelector";
 
 /** "Not enough credits" / "credits locked" after a refused draw. */
 export interface CreditsNotice {
@@ -40,17 +31,16 @@ export interface CreditsNotice {
 // sessionStorage-backed so the chosen tab survives navigating away and back
 // within the tab (same pattern as the Sources page view toggle).
 const MODE_KEY = "lr:entropy:mode";
-const MODES: EntropyMode[] = ["pool", "custom", "source", "card"];
+// The tabs on offer. A stored mode from before ("source" / "card") falls back to "pool".
+const MODES: EntropyMode[] = ["pool", "custom"];
 
 function isMode(value: string | null): value is EntropyMode {
   return MODES.includes(value as EntropyMode);
 }
 
-/** `mode` omitted = the source cards, as before modes existed. */
 export type EntropyGenerateRequest = EntropyRequest;
 
 export default function EntropyInput({
-  sourcesPromise,
   catalogPromise,
   generating,
   error,
@@ -59,7 +49,6 @@ export default function EntropyInput({
   onModeChange,
   onGenerate,
 }: {
-  sourcesPromise: Promise<Source[]>;
   catalogPromise: Promise<EntropyCatalog>;
   generating: boolean;
   error: string | null;
@@ -81,19 +70,11 @@ export default function EntropyInput({
     if (isMode(stored)) setMode(stored);
   }, []);
   const [selectedPoolId, setSelectedPoolId] = useState<string | null>(null);
-  const [selectedSingleId, setSelectedSingleId] = useState<string | null>(null);
-  // Single source "QEC error correction" toggle (IQM card): picks a real,
-  // separate source (QEC_VARIANT), unlike the Source cards QEC modes.
-  const [singleQec, setSingleQec] = useState(false);
   const [pickedIds, setPickedIds] = useState<string[]>([]);
-  const [sourceData, setSourceData] = useState<EntropySource | null>(null);
   const [bytes, setBytes] = useState<number>(32);
   const [customBytes, setCustomBytes] = useState<string>("32");
   const [isCustom, setIsCustom] = useState(false);
-  const [qecEnabled, setQecEnabled] = useState(false);
-  const [qecMode, setQecMode] = useState(4);
 
-  const isIQM = mode === "card" && sourceData?.id === "iqm-resonance";
   const bytesValid = isValidByteCount(bytes);
 
   // The request for whatever is selected in the active mode, or null.
@@ -102,30 +83,20 @@ export default function EntropyInput({
       const pool = POOL_OPTIONS.find((p) => p.id === selectedPoolId);
       return pool ? { mode, sourceId: pool.id, sourceName: pool.name, bytes } : null;
     }
-    if (mode === "source") {
-      if (!selectedSingleId) return null;
-      // The source the draw really uses (the receipt names the same one).
-      const source = SINGLE_SOURCE_OPTIONS.find((s) => s.id === singleSourceDrawId(selectedSingleId, singleQec));
+    // Custom pool: one pick draws from that source's own ring (mode
+    // "source"); two or more are blended (mode "custom", EMS multi).
+    if (pickedIds.length === 1) {
+      const source = SINGLE_SOURCE_OPTIONS.find((s) => s.id === pickedIds[0]);
       return source
-        ? { mode, sourceId: source.id, sourceName: `Single source: ${sourceDisplayName(source.id)}`, bytes }
+        ? { mode: "source", sourceId: source.id, sourceName: `Single source: ${sourceDisplayName(source.id)}`, bytes }
         : null;
     }
-    if (mode === "custom") {
-      if (pickedIds.length < MIN_CUSTOM_SOURCES || pickedIds.length > MAX_CUSTOM_SOURCES) return null;
-      return {
-        mode,
-        sourceId: "custom",
-        ids: pickedIds,
-        sourceName: `Custom pool: ${pickedIds.map(sourceDisplayName).join(" + ")}`,
-        bytes,
-      };
-    }
-    if (!sourceData) return null;
+    if (pickedIds.length < MIN_CUSTOM_SOURCES || pickedIds.length > MAX_CUSTOM_SOURCES) return null;
     return {
-      sourceId: isIQM && qecEnabled ? `iqm-qec-${qecMode}` : sourceData.id,
-      sourceName: isIQM && qecEnabled
-        ? `IQM Resonance + QEC (${QEC_MODES.find((m) => m.mode === qecMode)?.name})`
-        : sourceData.name,
+      mode: "custom",
+      sourceId: "custom",
+      ids: pickedIds,
+      sourceName: `Custom pool: ${pickedIds.map(sourceDisplayName).join(" + ")}`,
       bytes,
     };
   }
@@ -148,11 +119,6 @@ export default function EntropyInput({
           ? prev
           : [...prev, id],
     );
-  }
-
-  function handleSelectSource(source: EntropySource) {
-    setSourceData(source);
-    if (source.id !== "iqm-resonance") setQecEnabled(false);
   }
 
   function handlePreset(n: number) {
@@ -199,34 +165,6 @@ export default function EntropyInput({
         <Suspense fallback={<CatalogSkeleton />}>
           <CustomSourcePicker catalogPromise={catalogPromise} picked={pickedIds} onToggle={togglePick} />
         </Suspense>
-      )}
-
-      {mode === "source" && (
-        <Suspense fallback={<CatalogSkeleton />}>
-          <SingleSourceSelector
-            catalogPromise={catalogPromise}
-            selectedId={selectedSingleId}
-            onSelect={setSelectedSingleId}
-            qec={singleQec}
-            onQecChange={setSingleQec}
-            qecMode={qecMode}
-            onQecModeChange={setQecMode}
-          />
-        </Suspense>
-      )}
-
-      {mode === "card" && (
-        <Suspense fallback={<EntropySourceSelectorSkeleton />}>
-          <EntropySourceSelector
-            sourcesPromise={sourcesPromise}
-            selectedId={sourceData?.id ?? null}
-            onSelect={handleSelectSource}
-          />
-        </Suspense>
-      )}
-
-      {isIQM && (
-        <QecPanel enabled={qecEnabled} onToggle={setQecEnabled} mode={qecMode} onModeChange={setQecMode} />
       )}
 
       <EntropyByteCountInput
