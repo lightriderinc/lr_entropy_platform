@@ -11,18 +11,24 @@ export default function PoolSelector({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      {POOL_OPTIONS.map((pool) => (
-        <EntropySourceCard
-          key={pool.id}
-          id={pool.id}
-          name={pool.name}
-          description={pool.description}
-          icon={<pool.icon />}
-          selected={selectedId === pool.id}
-          onSelect={() => onSelect(pool.id)}
-        />
-      ))}
+    <div className="flex flex-col gap-2">
+      <label className="block text-md font-semibold text-gray-400 mb-1">
+        Entropy pool
+      </label>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {POOL_OPTIONS.map((pool) => (
+          <EntropySourceCard
+            key={pool.id}
+            id={pool.id}
+            name={pool.name}
+            description={pool.description}
+            icon={<pool.icon />}
+            selected={selectedId === pool.id}
+            onSelect={() => onSelect(pool.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
