@@ -304,12 +304,11 @@ export function sourceDisplayName(id: string): string {
   return SOURCE_NAMES[id] ?? siteSource(id)?.name ?? id;
 }
 
-/** What kind of draw a receipt describes, from its own `policy` field. */
+/** What kind of draw a receipt describes, from its own `policy` field, named as the Get Entropy tabs are. */
 export function modeFromPolicy(policy: string): string {
-  if (policy === "single_source") return "Single source";
-  if (policy === "multi_source" || policy === "custom_pool")
+  if (policy === "single_source" || policy === "multi_source" || policy === "custom_pool")
     return "Custom pool";
-  return "Pool";
+  return "Preset pool";
 }
 
 /** Catalog entry from EMS GET /v1/entropy/sources. */

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { parseReceiptLossless, stringifyLossless, verifyReceipt } from "@/lib/receipts/canonical";
 import { getReceiptPublicKey } from "@/lib/receipts/publicKey";
+import { MULTI_SOURCE_POLICIES, parsePoolKey, receiptPoolKey, SINGLE_SOURCE_POLICY } from "@/lib/receipts/pools";
 
 // Server-only. Draws and their signed receipts in the entropy schema.
 //
@@ -156,6 +157,8 @@ export type ReceiptRow = {
   status: string;
   requestId: string | null;
   poolId: string | null;
+  /** Pool key (lib/receipts/pools.ts) the row is listed and filtered under. */
+  pool: string | null;
   contributingSources: string[];
 };
 
@@ -167,7 +170,9 @@ export async function listReceipts(
     logtoUserId: userSub,
     status: { in: LISTED_STATUSES },
     ...(opts.modes?.length ? { mode: { in: opts.modes } } : {}),
-    ...(opts.pools?.length ? { receipt: { is: { poolId: { in: opts.pools }, logtoUserId: userSub } } } : {}),
+    ...(opts.pools?.length
+      ? { receipt: { is: { logtoUserId: userSub, OR: opts.pools.map(poolKeyWhere) } } }
+      : {}),
   };
   // The cursor is a draw id; only honoured if it is one of this user's draws.
   const cursorOk =
@@ -179,7 +184,7 @@ export async function listReceipts(
     orderBy: [{ createdAt: "desc" }, { drawId: "desc" }],
     take: RECEIPTS_PAGE_SIZE + 1,
     ...(cursorOk ? { cursor: { drawId: opts.cursor! }, skip: 1 } : {}),
-    include: { receipt: { select: { requestId: true, poolId: true, contributingSources: true } } },
+    include: { receipt: { select: { requestId: true, policy: true, poolId: true, contributingSources: true } } },
   });
   const page = draws.slice(0, RECEIPTS_PAGE_SIZE);
   return {
@@ -192,16 +197,30 @@ export async function listReceipts(
       status: d.status,
       requestId: d.receipt?.requestId ?? null,
       poolId: d.receipt?.poolId ?? null,
+      pool: d.receipt ? receiptPoolKey(d.receipt.policy, d.receipt.poolId, d.receipt.contributingSources) : null,
       contributingSources: d.receipt?.contributingSources ?? [],
     })),
     nextCursor: draws.length > RECEIPTS_PAGE_SIZE ? page[page.length - 1].drawId : null,
   };
 }
 
-/** Pools this user has receipts from, for the filter. */
+/** The receipts a Pool filter key selects (keys from listReceiptPools). */
+function poolKeyWhere(key: string): Prisma.ReceiptWhereInput {
+  const k = parsePoolKey(key);
+  if (k.kind === "multi") return { policy: { in: MULTI_SOURCE_POLICIES } };
+  if (k.kind === "source") return { policy: SINGLE_SOURCE_POLICY, contributingSources: { has: k.sourceId } };
+  return { poolId: k.poolId, policy: { notIn: [...MULTI_SOURCE_POLICIES, SINGLE_SOURCE_POLICY] } };
+}
+
+/** Pool keys this user has receipts under, for the filter: preset pools, then custom ones. */
 export async function listReceiptPools(userSub: string): Promise<string[]> {
-  const rows = await db.receipt.groupBy({ by: ["poolId"], where: { logtoUserId: userSub }, orderBy: { poolId: "asc" } });
-  return rows.map((r) => r.poolId);
+  const rows = await db.receipt.findMany({
+    where: { logtoUserId: userSub },
+    distinct: ["policy", "poolId", "contributingSources"],
+    select: { policy: true, poolId: true, contributingSources: true },
+  });
+  const keys = new Set(rows.map((r) => receiptPoolKey(r.policy, r.poolId, r.contributingSources)));
+  return [...keys].sort((a, b) => Number(a.startsWith("custom:")) - Number(b.startsWith("custom:")) || a.localeCompare(b));
 }
 
 /** One of this user's receipts, or null (also for someone else's). */

@@ -7,6 +7,8 @@ import LRButton from "@/components/ui/LRButton";
 import { parseReceiptLossless, verifyReceipt } from "@/lib/receipts/canonical";
 import { stringify } from "lossless-json";
 import { formatCredits } from "@/lib/entropy/pricing";
+import { sourceDisplayName } from "@/lib/entropy/modes";
+import { poolKeyLabel, receiptPoolKey } from "@/lib/receipts/pools";
 import { MODE_LABELS, STATUS_LABELS } from "./labels";
 
 type Detail = {
@@ -67,6 +69,7 @@ export default function ReceiptDetail({ requestId, onClose }: { requestId: strin
   const parsed = useMemo(() => (detail ? parseReceiptLossless(detail.signedJson) : null), [detail]);
   const pretty = useMemo(() => (parsed ? (stringify(parsed, null, 2) ?? "") : ""), [parsed]);
   const field = (k: string) => (parsed ? String(parsed[k] ?? "") : "");
+  const sources = Array.isArray(parsed?.contributing_sources) ? (parsed.contributing_sources as unknown[]).map(String) : [];
 
   async function verify() {
     if (!detail) return;
@@ -99,14 +102,17 @@ export default function ReceiptDetail({ requestId, onClose }: { requestId: strin
               <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 <Field label="Mode" value={MODE_LABELS[detail.mode] ?? detail.mode} />
                 <Field label="Status" value={STATUS_LABELS[detail.status] ?? detail.status} />
-                <Field label="Pool" value={<span className="font-mono">{field("pool_id")}</span>} />
+                <Field
+                  label="Pool"
+                  value={poolKeyLabel(receiptPoolKey(field("policy"), field("pool_id"), sources))}
+                />
                 <Field label="Policy" value={field("policy")} />
                 <div className="col-span-2">
                   <Field
                     label="Contributing sources"
                     value={
-                      Array.isArray(parsed.contributing_sources) && parsed.contributing_sources.length > 0
-                        ? (parsed.contributing_sources as unknown[]).map(String).join(", ")
+                      sources.length > 0
+                        ? sources.map(sourceDisplayName).join(", ")
                         : "None tracked for this draw"
                     }
                   />
