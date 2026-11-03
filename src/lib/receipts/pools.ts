@@ -39,3 +39,8 @@ export function poolKeyLabel(key: string): string {
   if (k.kind === "source") return `Custom: ${sourceDisplayName(k.sourceId)}`;
   return POOL_OPTIONS.find((p) => p.poolId === k.poolId)?.name ?? k.poolId;
 }
+
+/** The Pool label for a signed receipt's own fields (session history, Get Entropy result). */
+export function receiptPoolLabel(r: { policy: string; pool_id: string; contributing_sources: string[] }): string {
+  return poolKeyLabel(receiptPoolKey(r.policy, r.pool_id, r.contributing_sources ?? []));
+}

@@ -3,6 +3,7 @@
 import { receiptsTabHref } from "@/components/receipts/tabs";
 import ConfirmDeleteModal from "@/components/ui/ConfirmDeleteModal";
 import type { EntropyResult } from "@/lib/entropy/generate";
+import { receiptPoolLabel } from "@/lib/receipts/pools";
 import Link from "next/link";
 import { useState } from "react";
 import { FaDice } from "react-icons/fa6";
@@ -78,7 +79,7 @@ export default function ActivityHistoryList({
 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="mt-2 font-medium text-sm text-gray-600">
-                  {item.sourceName} · {item.receipt.pool_id} · {item.bytes}B
+                  {receiptPoolLabel(item.receipt)} · {item.bytes}B
                 </span>
                 {item.receipt.request_id && (
                   <Link

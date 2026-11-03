@@ -3,6 +3,7 @@
 import CopyButton from "@/components/ui/CopyButton";
 import type { EntropyResult } from "@/lib/entropy/generate";
 import { modeFromPolicy, sourceDisplayName } from "@/lib/entropy/modes";
+import { receiptPoolLabel } from "@/lib/receipts/pools";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 function Field({ label, value }: { label: string; value: ReactNode }) {
@@ -60,7 +61,7 @@ export default function EntropyReceiptDetails({ result }: { result: EntropyResul
           <Field label="Mode" value={modeFromPolicy(r.policy)} />
           <Field label="Requested" value={result.sourceName} />
           <Field label="Policy" value={r.policy} />
-          <Field label="Pool" value={<span className="font-mono">{r.pool_id}</span>} />
+          <Field label="Pool" value={<span title={r.pool_id}>{receiptPoolLabel(r)}</span>} />
           <div className="col-span-2">
             <Field
               label="Contributing sources"

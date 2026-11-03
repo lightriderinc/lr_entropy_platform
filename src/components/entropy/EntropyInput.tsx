@@ -88,7 +88,7 @@ export default function EntropyInput({
     if (pickedIds.length === 1) {
       const source = SINGLE_SOURCE_OPTIONS.find((s) => s.id === pickedIds[0]);
       return source
-        ? { mode: "source", sourceId: source.id, sourceName: `Single source: ${sourceDisplayName(source.id)}`, bytes }
+        ? { mode: "source", sourceId: source.id, sourceName: `Custom pool: ${sourceDisplayName(source.id)}`, bytes }
         : null;
     }
     if (pickedIds.length < MIN_CUSTOM_SOURCES || pickedIds.length > MAX_CUSTOM_SOURCES) return null;
