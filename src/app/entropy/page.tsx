@@ -1,5 +1,4 @@
 import EntropyConsole from "@/components/entropy/EntropyConsole";
-import HowItWorksSection from "@/components/HowItWorksSection";
 import InfoBox from "@/components/InfoBox";
 import { getEntropyCatalog } from "@/lib/sources/egress";
 
@@ -20,7 +19,7 @@ export default function EntropyPage() {
         it straight into your workflow.
       </p>
 
-      <HowItWorksSection />
+      {/* <HowItWorksSection /> */}
       <div className="mb-8">
         <InfoBox>
           Every drawn byte is health-tested, cryptographically extracted, and
