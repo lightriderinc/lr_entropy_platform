@@ -15,13 +15,13 @@ export default function SignedReceiptsTab({
   return (
     <div>
       <p className="mb-4 text-sm text-gray-600">
-        Receipts for every entropy request you make.
+        Receipts for all your entropy requests.
       </p>
       <div className="mb-4">
         <InfoBox>
           Receipts do NOT include the generated entropy itself. <br />
-          Generated entropy is not stored on our servers. Copy your entropy
-          output once it is generated, or access entropy from your current
+          Generated entropy is not stored on our servers. Copy or export your entropy
+          output once it is generated, or access the values from your current
           browser tab&apos;s session from {" "}
           <Link
             href="/receipts?tab=session-history"
