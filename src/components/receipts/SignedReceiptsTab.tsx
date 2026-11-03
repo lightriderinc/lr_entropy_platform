@@ -1,4 +1,5 @@
 import InfoBox from "@/components/InfoBox";
+import Link from "next/link";
 import ReceiptsBrowser from "./ReceiptsBrowser";
 
 /**
@@ -14,11 +15,21 @@ export default function SignedReceiptsTab({
   return (
     <div>
       <p className="mb-4 text-sm text-gray-600">
-        A signed receipt for every draw.
+        Receipts for every entropy request you make.
       </p>
       <div className="mb-4">
         <InfoBox>
-          Receipts are kept for every entropy request you make, and do NOT include the generated entropy itself.
+          Receipts do NOT include the generated entropy itself. <br />
+          Generated entropy is not stored on our servers. Copy your entropy
+          output once it is generated, or access entropy from your current
+          browser tab&apos;s session from {" "}
+          <Link
+            href="/receipts?tab=session-history"
+            className="font-medium text-blue-600 underline hover:text-[var(--brand-primary)]"
+          >
+            Session history
+          </Link>
+          .
         </InfoBox>
       </div>
 
