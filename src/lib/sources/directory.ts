@@ -29,7 +29,7 @@ export async function getSourceDirectory(): Promise<DirectorySource[]> {
   const available: DirectorySource[] = [];
   const comingSoon: DirectorySource[] = [];
   for (const s of SITE_SOURCES) {
-    const base = { id: s.id, name: s.name, type: s.kind, policy: POLICY[s.tier] };
+    const base = { id: s.id, name: s.name, type: s.kind, tag: s.tag, policy: POLICY[s.tier] };
     if (s.comingSoon) {
       comingSoon.push({ ...base, online: false, availability: "coming_soon", ringState: null });
       continue;

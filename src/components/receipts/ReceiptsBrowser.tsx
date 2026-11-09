@@ -1,10 +1,11 @@
 "use client";
 
 import FilterBar, { type FilterGroup } from "@/components/ui/FilterBar";
+import { poolKeyLabel } from "@/lib/receipts/pools";
 import { useCallback, useEffect, useState } from "react";
 import { TbReceipt } from "react-icons/tb";
+import { MODE_FILTERS, STATUS_LABELS } from "./labels";
 import ReceiptDetail from "./ReceiptDetail";
-import { MODE_LABELS, STATUS_LABELS } from "./labels";
 
 type Row = {
   drawId: string;
@@ -15,6 +16,8 @@ type Row = {
   status: string;
   requestId: string | null;
   poolId: string | null;
+  /** Pool key (lib/receipts/pools.ts); null for a draw without a receipt. */
+  pool: string | null;
   contributingSources: string[];
 };
 
@@ -31,7 +34,9 @@ async function fetchPage(params: {
 }): Promise<Page> {
   const q = new URLSearchParams();
   if (params.cursor) q.set("cursor", params.cursor);
-  params.filters.mode.forEach((m) => q.append("mode", m));
+  MODE_FILTERS.filter((m) => params.filters.mode.has(m.value)).forEach((m) =>
+    m.modes.forEach((mode) => q.append("mode", mode)),
+  );
   params.filters.pool.forEach((p) => q.append("pool", p));
   const res = await fetch(`/api/receipts?${q}`, { cache: "no-store" });
   if (!res.ok) throw new Error(String(res.status));
@@ -126,15 +131,12 @@ export default function ReceiptsBrowser({
     {
       key: "mode",
       label: "Mode",
-      options: Object.entries(MODE_LABELS).map(([value, label]) => ({
-        value,
-        label,
-      })),
+      options: MODE_FILTERS.map(({ value, label }) => ({ value, label })),
     },
     {
       key: "pool",
       label: "Pool",
-      options: pools.map((p) => ({ value: p, label: p })),
+      options: pools.map((p) => ({ value: p, label: poolKeyLabel(p) })),
     },
   ];
   const hasFilters = filters.mode.size > 0 || filters.pool.size > 0;
@@ -221,8 +223,11 @@ export default function ReceiptsBrowser({
                       <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                         {new Date(r.createdAt).toLocaleString()}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-gray-500">
-                        {r.poolId ?? "—"}
+                      <td
+                        className="max-w-xs truncate whitespace-nowrap px-4 py-3 text-sm text-gray-500"
+                        title={r.poolId ?? undefined}
+                      >
+                        {r.pool ? poolKeyLabel(r.pool) : "—"}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-gray-700">
                         {r.bytes.toLocaleString()}

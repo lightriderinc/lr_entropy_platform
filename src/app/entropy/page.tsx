@@ -1,8 +1,6 @@
 import EntropyConsole from "@/components/entropy/EntropyConsole";
-import HowItWorksSection from "@/components/HowItWorksSection";
 import InfoBox from "@/components/InfoBox";
 import { getEntropyCatalog } from "@/lib/sources/egress";
-import { getSources } from "@/lib/sources/ems";
 
 export const metadata = {
   title: "Get Entropy",
@@ -10,9 +8,7 @@ export const metadata = {
 
 export default function EntropyPage() {
   // Not awaited: the promise streams to the client so the rest of the page
-  // renders immediately while the source selector shows a skeleton.
-  const sourcesPromise = getSources();
-  // Same pattern for the pools / custom / single-source catalog (egress).
+  // renders immediately while the custom-pool picker shows a skeleton.
   const catalogPromise = getEntropyCatalog();
 
   return (
@@ -23,14 +19,14 @@ export default function EntropyPage() {
         it straight into your workflow.
       </p>
 
-      <HowItWorksSection />
+      {/* <HowItWorksSection /> */}
       <div className="mb-8">
         <InfoBox>
           Every drawn byte is health-tested, cryptographically extracted, and
           signed with a verifiable receipt.
         </InfoBox>
       </div>
-      <EntropyConsole sourcesPromise={sourcesPromise} catalogPromise={catalogPromise} />
+      <EntropyConsole catalogPromise={catalogPromise} />
     </div>
   );
 }

@@ -162,6 +162,9 @@ export const cloudBilling = {
       returnOrigin,
       email,
     }),
+  /** Stripe Customer Portal for the same Customer; returns to this app's Payment & History. */
+  portal: (returnOrigin: string) =>
+    call<{ url?: string; error?: string }>("POST", "/api/internal/entropy/portal", { returnOrigin }),
 };
 
 export type ResolvedApiKey = { logtoUserId?: string; keyPrefix?: string; rateLimitPerMinute?: number; error?: string; retryAfterSeconds?: number };
@@ -215,4 +218,35 @@ export const apiKeyAccount = {
   create: () => call<{ key?: string; keyPrefix?: string; error?: string; message?: string }>("POST", "/api/internal/entropy/api-key", {}),
   rotate: () => call<{ key?: string; keyPrefix?: string; error?: string }>("POST", "/api/internal/entropy/api-key/rotate", {}),
   revoke: () => call<{ revoked?: boolean; error?: string }>("DELETE", "/api/internal/entropy/api-key"),
+};
+
+/**
+ * Share Credits on cloud. Authenticated like the wallet: the shared secret
+ * plus the user's own token.
+ *
+ * send: served by Light Rider Cloud's /api/internal/entropy/transfer, which
+ *   answers exactly like its own /api/billing/credits/transfer. 404 (a
+ *   deployment without the endpoint) and 500 (Cloud's handled failures carry a
+ *   user-facing message) are returned rather than thrown; lib/billing/transfers.ts
+ *   decides what each means.
+ * history: PROPOSED, not served by Cloud yet; only called when
+ *   ENTROPY_TRANSFER_HISTORY=cloud, and a 404 falls back to the wallet ledger.
+ */
+export const transferAccount = {
+  send: (rows: { email: string; credits: number }[], idempotencyKey: string, email?: string) =>
+    call<Record<string, unknown>>(
+      "POST",
+      "/api/internal/entropy/transfer",
+      { rows, idempotencyKey, email },
+      { kind: "user" },
+      [404, 500],
+    ),
+  history: (view: "sent" | "received", cursor?: string | null) =>
+    call<Record<string, unknown>>(
+      "GET",
+      `/api/internal/entropy/transfers?view=${view}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`,
+      undefined,
+      { kind: "user" },
+      [404],
+    ),
 };

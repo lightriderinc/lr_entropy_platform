@@ -7,7 +7,6 @@ import { sourceDisplayName, type EntropyCatalog } from "@/lib/entropy/modes";
 import { refreshWallet, setWalletBalance } from "@/lib/billing/walletStore";
 import { appendSessionHistory } from "@/lib/entropy/sessionHistory";
 import type { CreditsNotice } from "./EntropyInput";
-import type { Source } from "@/lib/sources/filters";
 import Link from "next/link";
 import { startTransition, useState } from "react";
 import EntropyInput, { type EntropyGenerateRequest } from "./EntropyInput";
@@ -24,14 +23,12 @@ async function fetchCatalog(): Promise<EntropyCatalog> {
 }
 
 export default function EntropyConsole({
-  sourcesPromise,
   catalogPromise: initialCatalog,
 }: {
-  sourcesPromise: Promise<Source[]>;
   catalogPromise: Promise<EntropyCatalog>;
 }) {
   // Starts as the page's streamed promise; replaced by a client refetch
-  // after each single-source / custom draw so ring state stays current.
+  // after each custom-pool draw so ring state stays current.
   const [catalogPromise, setCatalogPromise] = useState(initialCatalog);
   const [outOfEntropy, setOutOfEntropy] = useState<string | null>(null);
   const [creditsNotice, setCreditsNotice] = useState<CreditsNotice | null>(null);
@@ -82,7 +79,6 @@ export default function EntropyConsole({
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <EntropyInput
-          sourcesPromise={sourcesPromise}
           catalogPromise={catalogPromise}
           generating={generating}
           error={error}

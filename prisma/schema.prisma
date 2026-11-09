@@ -87,3 +87,16 @@ model Receipt {
   @@index([logtoUserId, poolId, createdAt(sort: Desc)])
   @@map("receipts")
 }
+
+/// Back-channel logout (lib/logto/backchannel-logout.ts): OIDC session ids
+/// Logto reported as ended, so a cookie still carrying one reads as signed out
+/// (getSession / requireLogtoUser). Same model as the cloud platform's
+/// RevokedLogtoSession; this app cannot read cloud's public schema.
+model RevokedLogtoSession {
+  sid       String   @id // the OIDC `sid` claim from the logout token
+  revokedAt DateTime @default(now()) @map("revoked_at")
+  expiresAt DateTime @map("expires_at") // retention horizon for pruning
+
+  @@index([expiresAt])
+  @@map("revoked_logto_sessions")
+}

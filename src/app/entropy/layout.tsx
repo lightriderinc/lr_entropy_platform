@@ -1,44 +1,19 @@
-"use client";
+import SignInRequired from "@/components/auth/SignInRequired";
+import { getSession } from "@/lib/auth/session";
 
-import { useEffect, useState } from "react";
-import { handleSignIn } from "../actions/auth";
-
-export default function EntropyLayout({
+/**
+ * Get Entropy is signed-in only. Decided here on the server, so the console
+ * never renders for a signed-out visitor. (It used to be a client layout that
+ * rendered the page first and only swapped in a sign-in prompt once a
+ * /api/auth/session fetch came back, which showed the real page for a second
+ * or two.) getSession() is cached per request, so this shares the root
+ * layout's lookup.
+ */
+export default async function EntropyLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [unauth, setUnauth] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/auth/session")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!data?.isAuthenticated) setUnauth(true);
-      })
-      .catch(() => setUnauth(true));
-  }, []);
-
-  if (unauth) {
-    return (
-      <div className="animate-fade-in-up">
-        <h1 className="text-2xl font-semibold text-gray-700 mb-2">
-          Get Entropy
-        </h1>
-        <p className="mb-6 text-sm text-gray-600">
-          Generate certified entropy from quantum and hardware sources.
-        </p>
-        <p className="mt-3 text-sm text-gray-600">
-          <button
-            type="button"
-            onClick={() => handleSignIn()}
-            className="brand-link cursor-pointer"
-          >
-            Log in
-          </button>{" "}
-          to request entropy.
-        </p>
-      </div>
-    );
-  }
+  const { isAuthenticated } = await getSession();
+  if (!isAuthenticated) return <SignInRequired target="the entropy console" />;
 
   return <>{children}</>;
 }

@@ -2,7 +2,6 @@ import ApiKeyPanel from "@/components/apiKey/ApiKeyPanel";
 import SignInRequired from "@/components/auth/SignInRequired";
 import InfoBox from "@/components/InfoBox";
 import { getSession } from "@/lib/auth/session";
-import { cloudPlatformUrl } from "@/lib/billing/cloudLinks";
 import Link from "next/link";
 
 export const metadata = { title: "API key" };
@@ -10,29 +9,21 @@ export const metadata = { title: "API key" };
 /**
  * Settings > API key: the account's ONE Light Rider API key, managed here
  * through cloud (lib/billing/cloudBilling.ts apiKeyAccount). It is the same
- * key as Light Rider Cloud's API Keys page, so a change on either site
- * applies to both immediately.
+ * key the other Light Rider platforms use, so a change here applies to all of
+ * them immediately. Light Rider Cloud has no API keys page of its own, so this
+ * page is where the key is managed for the entropy platform.
  */
 export default async function ApiKeyPage() {
   const { isAuthenticated } = await getSession();
   if (!isAuthenticated) return <SignInRequired target="your API key" />;
-
-  const cloudKeys = cloudPlatformUrl("/settings/keys");
 
   return (
     <div className="animate-fade-in-up flex max-w-3xl flex-col gap-4">
       <div>
         <h1 className="text-2xl font-semibold text-gray-700">API key</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Your Light Rider API key, for drawing entropy from your own code. It is the same key as on{" "}
-          {cloudKeys ? (
-            <a href={cloudKeys} className="font-medium text-blue-600 underline hover:text-[var(--brand-primary)]">
-              Light Rider Cloud
-            </a>
-          ) : (
-            "Light Rider Cloud"
-          )}
-          : generate, rotate or revoke it here or there, and the change applies to both at once.
+          Your Light Rider API key, for drawing entropy from your own code. It is the same key across the
+          Light Rider platforms: generate, rotate or revoke it here, and the change applies everywhere at once.
         </p>
       </div>
 

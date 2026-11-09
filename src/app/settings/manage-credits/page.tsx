@@ -4,6 +4,7 @@ import CheckoutReturn from "@/components/billing/CheckoutReturn";
 import CreditsSummary, { PURCHASE_CREDITS_HREF } from "@/components/billing/CreditsSummary";
 import WalletAutoRefresh from "@/components/billing/WalletAutoRefresh";
 import { getSession } from "@/lib/auth/session";
+import { LuHandCoins } from "react-icons/lu";
 import { PiCoinsFill } from "react-icons/pi";
 
 export const metadata = { title: "Manage Credits" };
@@ -23,7 +24,7 @@ export default async function ManageCreditsPage() {
     <div className="animate-fade-in-up">
       <h1 className="text-2xl font-semibold text-gray-700">Manage Credits</h1>
       <p className="mb-12 text-sm text-gray-600">
-        Manage your Light Rider credit balance. Credits pay for entropy draws.
+        Manage your Light Rider credit balance or send credits to other Light Rider users.
       </p>
 
       <WalletAutoRefresh />
@@ -42,6 +43,14 @@ export default async function ManageCreditsPage() {
             title="Purchase credits"
             desc="Purchase credits to pay for entropy draws."
             icon={PiCoinsFill}
+          />
+        </div>
+        <div className="flex lg:w-128">
+          <NavCard
+            href="/settings/manage-credits/share"
+            title="Share credits"
+            desc="Send credits to other Light Rider users."
+            icon={LuHandCoins}
           />
         </div>
       </div>
