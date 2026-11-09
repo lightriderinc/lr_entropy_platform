@@ -203,6 +203,10 @@ export function sanitizeReturnTo(raw: string | null | undefined): string {
   if (!raw) return "/";
   // Must be a bare absolute path: rejects "//evil.com" and "https://evil.com".
   if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
+  // Also rejects any backslash: URL parsing treats "\" as "/" in http(s)
+  // URLs, so "/\evil.com" would pass the check above yet resolve to
+  // https://evil.com.
+  if (raw.includes("\\")) return "/";
   if (!isSilentSsoAllowedPath(raw)) return "/";
   return raw;
 }
