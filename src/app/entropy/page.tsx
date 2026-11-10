@@ -3,7 +3,7 @@ import InfoBox from "@/components/InfoBox";
 import { getEntropyCatalog } from "@/lib/sources/egress";
 
 export const metadata = {
-  title: "Get Entropy",
+  title: "Get Entropy | Light Rider Entropy",
 };
 
 export default function EntropyPage() {

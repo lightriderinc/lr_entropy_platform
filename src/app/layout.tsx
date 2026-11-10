@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Science_Gothic } from "next/font/google";
-import "./globals.css";
 import SessionSync from "@/components/auth/SessionSync";
 import Header from "@/components/Header";
 import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSecondary from "@/components/sidebar/SidebarSecondary";
 import SidebarSecondaryGate from "@/components/sidebar/SidebarSecondaryGate";
 import { getSession } from "@/lib/auth/session";
+import type { Metadata } from "next";
+import { IBM_Plex_Mono, IBM_Plex_Sans, Science_Gothic } from "next/font/google";
+import type { ReactNode } from "react";
+import "./globals.css";
 
 const ibmPlexSans = IBM_Plex_Sans({
   variable: "--font-ibm-plex-sans",
@@ -26,7 +26,7 @@ const scienceGothic = Science_Gothic({
 });
 
 export const metadata: Metadata = {
-  title: "Light Rider · Entropy Platform",
+  title: "Light Rider Entropy | Certified quantum randomness",
   description: "Entropy management and distribution platform.",
 };
 

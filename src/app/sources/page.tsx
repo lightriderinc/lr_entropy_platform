@@ -1,6 +1,10 @@
 import SourceCatalog from "@/components/sources/SourceCatalog";
 import { getSourceDirectory } from "@/lib/sources/directory";
 
+export const metadata = {
+  title: "Sources | Light Rider Entropy",
+};
+
 export default async function SourcesPage() {
   const sources = await getSourceDirectory();
 

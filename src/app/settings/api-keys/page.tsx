@@ -4,7 +4,7 @@ import InfoBox from "@/components/InfoBox";
 import { getSession } from "@/lib/auth/session";
 import Link from "next/link";
 
-export const metadata = { title: "API key" };
+export const metadata = { title: "API key | Light Rider Entropy" };
 
 /**
  * Settings > API key: the account's ONE Light Rider API key, managed here

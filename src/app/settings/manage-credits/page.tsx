@@ -7,7 +7,7 @@ import { getSession } from "@/lib/auth/session";
 import { LuHandCoins } from "react-icons/lu";
 import { PiCoinsFill } from "react-icons/pi";
 
-export const metadata = { title: "Manage Credits" };
+export const metadata = { title: "Manage Credits | Light Rider Entropy" };
 
 /**
  * Manage Credits: the shared Light Rider wallet (the same balance as the Cloud
