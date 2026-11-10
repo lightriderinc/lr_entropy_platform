@@ -5,7 +5,7 @@ import SignedReceiptsTab from "@/components/receipts/SignedReceiptsTab";
 import { getSession } from "@/lib/auth/session";
 import { Suspense } from "react";
 
-export const metadata = { title: "Receipts" };
+export const metadata = { title: "Receipts | Light Rider Entropy" };
 
 /**
  * Receipts: the signed receipts kept for the user's account, plus the entropy

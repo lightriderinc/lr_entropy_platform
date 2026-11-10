@@ -4,7 +4,7 @@ import UsageHistory from "@/components/billing/UsageHistory";
 import WalletAutoRefresh from "@/components/billing/WalletAutoRefresh";
 import { getSession } from "@/lib/auth/session";
 
-export const metadata = { title: "Payment & History" };
+export const metadata = { title: "Payment & History | Light Rider Entropy" };
 
 /**
  * Payment & History, mirroring cloud's /settings/payment-and-history. The

@@ -6,7 +6,7 @@ import BackButton from "@/components/ui/BackButton";
 import { getSession } from "@/lib/auth/session";
 import { transferCapabilities } from "@/lib/billing/transfers";
 
-export const metadata = { title: "Share Credits" };
+export const metadata = { title: "Share Credits | Light Rider Entropy" };
 
 /**
  * Share Credits: send credits to other Light Rider users and see transfer

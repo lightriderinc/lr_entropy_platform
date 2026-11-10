@@ -5,7 +5,7 @@ import WalletAutoRefresh from "@/components/billing/WalletAutoRefresh";
 import BackButton from "@/components/ui/BackButton";
 import { getSession } from "@/lib/auth/session";
 
-export const metadata = { title: "Purchase Credits" };
+export const metadata = { title: "Purchase Credits | Light Rider Entropy" };
 
 /** Purchase Credits: top-up plus entropy pricing. Mirrors cloud's /settings/manage-credits/purchase. */
 export default async function PurchaseCreditsPage() {

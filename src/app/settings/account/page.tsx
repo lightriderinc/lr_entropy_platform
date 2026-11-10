@@ -4,13 +4,13 @@ import SignOut from "@/app/sign-out";
 import SignInRequired from "@/components/auth/SignInRequired";
 import ConnectedAccounts from "@/components/profile/ConnectedAccounts";
 import ProfileAvatar from "@/components/profile/ProfileAvatar";
-import { AVATAR_FORM_FIELD, resolveAvatarSources } from "@/lib/avatar";
 import {
   getAccountProfile,
   getDisplayName,
   getSession,
   requireLogtoUser,
 } from "@/lib/auth/session";
+import { AVATAR_FORM_FIELD, resolveAvatarSources } from "@/lib/avatar";
 import {
   bindTotp,
   deleteMfaVerification,
@@ -29,6 +29,10 @@ import { deleteAvatar, uploadAvatar } from "@/lib/supabase/avatars";
 import { getAccessToken } from "@logto/next/server-actions";
 import { refresh, revalidatePath } from "next/cache";
 import ProfileActions from "./ProfileActions";
+
+export const metadata = {
+  title: "Account | Light Rider Entropy",
+};
 
 /**
  * Account page. Mirrors the cloud platform's /settings/account in structure,

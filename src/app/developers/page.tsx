@@ -2,7 +2,7 @@ import DevGuide from "@/components/developers/DevGuide";
 import { getSession } from "@/lib/auth/session";
 import { sourceAliasList } from "@/lib/entropy/modes";
 
-export const metadata = { title: "Developers" };
+export const metadata = { title: "Developers | Light Rider Entropy" };
 
 /** Public quickstart for the developer API. Commands live in lib/developers/snippets.ts. */
 export default async function DevelopersPage() {
